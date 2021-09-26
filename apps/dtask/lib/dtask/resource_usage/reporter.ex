@@ -10,16 +10,12 @@ defmodule DTask.ResourceUsage.Reporter do
           collector :: GenServer.server,
           interval :: non_neg_integer,
           extractor :: Extractor.t,
-          extractor_params :: Extractor.params,
-          register :: :register | nil
+          extractor_params :: Extractor.params
         ) :: GenServer.on_start
-  def start_link(collector, interval, extractor, extractor_params, register \\ nil) do
+  def start_link(collector, interval, extractor, extractor_params) do
     Logger.debug("DTask.ResourceUsage.Reporter.start_link")
     init = {collector, interval, extractor, extractor_params}
-    opts = if register == :register,
-              do: [name: __MODULE__],
-              else: []
-    GenServer.start_link(__MODULE__, init, opts)
+    GenServer.start_link(__MODULE__, init, name: __MODULE__)
   end
 
   @spec stop(GenServer.server) :: :ok

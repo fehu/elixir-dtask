@@ -41,7 +41,7 @@ defmodule DTask.App.Runner do
     children = [
       %{
         id: Executor,
-        start: {Executor, :start_link, [{Dispatcher, cfg.master_node}, nil]}
+        start: {Executor, :start_link, [{Dispatcher, cfg.master_node}]}
       },
       %{
         id: Reporter,
@@ -49,8 +49,7 @@ defmodule DTask.App.Runner do
           {Collector, cfg.master_node},
           cfg.resource_report_interval,
           cfg.resource_usage.extractor,
-          cfg.resource_usage.params,
-          nil
+          cfg.resource_usage.params
         ]}
       }
     ]

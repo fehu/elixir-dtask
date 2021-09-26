@@ -6,13 +6,10 @@ defmodule DTask.ResourceUsage.Collector do
 
   @type usage :: term
 
-  @spec start_link(non_neg_integer, :register | nil) :: GenServer.on_start
-  def start_link(dead_timeout_millis, register \\ nil) do
+  @spec start_link(non_neg_integer) :: GenServer.on_start
+  def start_link(dead_timeout_millis) do
     Logger.debug("DTask.ResourceUsage.Collector.start_link")
-    opts = if register == :register,
-              do: [name: __MODULE__],
-              else: []
-    GenServer.start_link(__MODULE__, dead_timeout_millis, opts)
+    GenServer.start_link(__MODULE__, dead_timeout_millis, name: __MODULE__)
   end
 
   @spec report_usage(GenServer.server, usage) :: :ok
@@ -22,7 +19,7 @@ defmodule DTask.ResourceUsage.Collector do
   end
 
   @spec get_usage(GenServer.server) :: %{node => usage}
-  def get_usage(server) do
+  def get_usage(server \\ __MODULE__) do
     Logger.debug("DTask.ResourceUsage.Collector.get_usage")
     GenServer.call(server, :get)
   end

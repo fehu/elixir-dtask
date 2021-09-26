@@ -8,5 +8,5 @@ alias DTask.ResourceUsage.Extractor.NvidiaSmi
 
 collector = {DTask.ResourceUsage.Collector, :ctrl@opensuse}
 
-reporter_pid = Reporter.start_link(collector, 1_000, NvidiaSmi, [], :register)
+reporter_pid = Reporter.start_link(collector, 1_000, NvidiaSmi, [])
 

@@ -15,19 +15,16 @@ defmodule DTask.Task.Dispatcher do
                          finished: [{task, {:success | :failure, term}}]
                        }
 
-  @spec start_link(String.t, [task, ...], :register | nil) :: GenServer.on_start
-  def start_link(exec_node_prefix, tasks, register \\ nil) do
+  @spec start_link(String.t, [task, ...]) :: GenServer.on_start
+  def start_link(exec_node_prefix, tasks) do
     Logger.debug("DTask.Task.Dispatcher.start_link")
-    opts = if register == :register,
-              do: [name: __MODULE__],
-              else: []
-    GenServer.start_link(__MODULE__, {exec_node_prefix, tasks}, opts)
+    GenServer.start_link(__MODULE__, {exec_node_prefix, tasks}, name: __MODULE__)
   end
 
   # Queries
 
   @spec get_tasks_state(server) :: tasks_state
-  def get_tasks_state(server) do
+  def get_tasks_state(server \\ __MODULE__) do
     GenServer.call(server, :tasks_state)
   end
 

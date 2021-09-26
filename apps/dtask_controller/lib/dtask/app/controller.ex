@@ -32,11 +32,11 @@ defmodule DTask.App.Controller do
     children = [
       %{
         id: Dispatcher,
-        start: {Dispatcher, :start_link, [cfg.exec_node_prefix, cfg.tasks, nil]}
+        start: {Dispatcher, :start_link, [cfg.exec_node_prefix, cfg.tasks]}
       },
       %{
         id: Collector,
-        start: {Collector, :start_link, [cfg.resource_report_timeout_millis, nil]}
+        start: {Collector, :start_link, [cfg.resource_report_timeout_millis]}
       }
     ]
     opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]

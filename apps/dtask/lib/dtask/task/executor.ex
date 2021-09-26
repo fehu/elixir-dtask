@@ -5,12 +5,9 @@ defmodule DTask.Task.Executor do
 
   use GenServer
 
-  @spec start_link(Dispatcher.server, :register | nil) :: GenServer.on_start
-  def start_link(dispatcher, register \\ nil) do
-    opts = if register == :register,
-              do: [name: __MODULE__],
-              else: []
-    GenServer.start_link(__MODULE__, dispatcher, opts)
+  @spec start_link(Dispatcher.server) :: GenServer.on_start
+  def start_link(dispatcher) do
+    GenServer.start_link(__MODULE__, dispatcher, name: __MODULE__)
   end
 
   @spec exec_task(GenServer.server, Task.t, Task.params) :: :ok
