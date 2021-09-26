@@ -91,7 +91,7 @@ defmodule DTask.Task.Dispatcher do
           state
         {[next | pending], [node | idle]} ->
           dispatch_task(next, node)
-          wip = {next, %{state: :dispatched, node: node}}
+          wip = {next, %{progress: :dispatched, node: node}}
           state |> put_in([:tasks, :pending], pending)
                 |> put_in([:executors, :idle], idle)
                 |> update_in([:tasks, :wip], &[wip | &1])
@@ -137,7 +137,8 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_cast({:progress, task, progress}, state) do
-    new_state = put_in(state.tasks.wip[task].progress, progress)
+    new_state = update_in state.tasks.wip,
+                          &keyupdate(&1, task, 0, fn {_, m} -> {task, %{m | :progress => progress}} end)
     {:noreply, new_state}
   end
 
@@ -179,5 +180,11 @@ defmodule DTask.Task.Dispatcher do
       state |> update_in([:tasks, :finished], &[{task, outcome} | &1])
             |> get_and_update_in([:tasks, :wip], &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
     {wip.node, new_state}
+  end
+
+  @spec keyupdate([tuple], any, non_neg_integer, (tuple -> tuple)) :: [tuple]
+  defp keyupdate(list, key, position, update) do
+    found = List.keyfind(list, key, position)
+    List.keyreplace(list, key, position, update.(found))
   end
 end
