@@ -120,9 +120,7 @@ defmodule DTask.Task.Dispatcher do
     task0 = Enum.find(state.tasks.wip, fn {_, v} -> v.node == node end)
     {_, new_state0} =
       if task0 do
-        task = elem(task0, 0)
-        state |> put_in([:tasks, :finished, task], {:error, :nodedown})
-              |> pop_in([:tasks, :wip, task])
+        task_finished_upd(state, elem(task0, 0), {:error, :nodedown})
       else
         {nil, state}
       end
@@ -164,14 +162,18 @@ defmodule DTask.Task.Dispatcher do
   end
 
   defp task_finished(state, task, outcome) do
-    Logger.info("Finished task #{task} with outcome #{inspect(outcome)}")
-    {wip, new_state0} = state |> put_in([:tasks, :finished, task], outcome)
-                              |> pop_in([:tasks, :wip, task])
-    node = wip.node
+    Logger.info("Finished task #{inspect(task)} with outcome #{inspect(outcome)}")
+    {node, new_state0} = task_finished_upd(state, task, outcome)
     new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
                            |> update_in([:executors, :idle], &[node | &1])
     dispatch_next()
     {:noreply, new_state}
   end
 
+  defp task_finished_upd(state, task, outcome) do
+    {{_, wip}, new_state} =
+      state |> update_in([:tasks, :finished], &[{task, outcome} | &1])
+            |> get_and_update_in([:tasks, :wip], &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
+    {wip.node, new_state}
+  end
 end
