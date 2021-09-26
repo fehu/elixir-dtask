@@ -17,7 +17,7 @@ defmodule DTask.Task.Dispatcher do
 
   @spec start_link(String.t, [task, ...]) :: GenServer.on_start
   def start_link(exec_node_prefix, tasks) do
-    Logger.debug("DTask.Task.Dispatcher.start_link")
+    Logger.debug("DTask.Task.Dispatcher.start_link(#{exec_node_prefix}, #{inspect(tasks)})")
     GenServer.start_link(__MODULE__, {exec_node_prefix, tasks}, name: __MODULE__)
   end
 
@@ -32,19 +32,19 @@ defmodule DTask.Task.Dispatcher do
 
   @spec report_progress(server, task, term) :: :ok
   def report_progress(server, task, progress) do
-    Logger.debug("DTask.Task.Dispatcher.report_progress")
+    Logger.debug("DTask.Task.Dispatcher.report_progress(#{inspect(server)}, #{inspect(task)}, #{inspect(progress)})")
     GenServer.cast(server, {:progress, task, progress})
   end
 
   @spec report_success(server, task, term) :: :ok
   def report_success(server, task, result) do
-    Logger.debug("DTask.Task.Dispatcher.report_success")
+    Logger.debug("DTask.Task.Dispatcher.report_success(#{inspect(server)}, #{inspect(task)}, #{inspect(result)})")
     GenServer.cast(server, {:success, task, result})
   end
 
   @spec report_failure(server, task, term) :: :ok
   def report_failure(server, task, error) do
-    Logger.debug("DTask.Task.Dispatcher.report_failure")
+    Logger.debug("DTask.Task.Dispatcher.report_failure(#{inspect(server)}, #{inspect(task)}, #{inspect(error)})")
     GenServer.cast(server, {:failure, task, error})
   end
 
@@ -53,7 +53,7 @@ defmodule DTask.Task.Dispatcher do
   @impl true
   def init({exec_node_prefix, tasks}) do
     executors = Node.list() |> Enum.filter(&executor_node?(exec_node_prefix, &1))
-    Logger.notice("Discovered executors: #{executors}")
+    Logger.notice("Available executors: #{inspect(executors)}")
     state = %{
       tasks: %{
         pending: tasks,
@@ -84,7 +84,7 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_info(:next, state) do
-    Logger.debug("DTask.Task.Dispatcher.handle_info :next")
+    Logger.debug(["DTask.Task.Dispatcher.handle_info(:next, #{inspect(state)})"])
     new_state =
       case {state.tasks.pending, state.executors.idle} do
         {[], _} ->
@@ -137,6 +137,7 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_cast({:progress, task, progress}, state) do
+    Logger.debug("DTask.Task.Dispatcher.handle_cast {:progress, #{inspect(task)}, #{inspect(progress)}}")
     new_state = update_in state.tasks.wip,
                           &keyupdate(&1, task, 0, fn {_, m} -> {task, %{m | :progress => progress}} end)
     {:noreply, new_state}
@@ -144,11 +145,13 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_cast({:success, task, result}, state) do
+    Logger.debug("DTask.Task.Dispatcher.handle_cast {:success, #{inspect(task)}, #{inspect(result)}}")
     task_finished(state, task, {:success, result})
   end
 
   @impl true
   def handle_cast({:failure, task, error}, state) do
+    Logger.debug("DTask.Task.Dispatcher.handle_cast {:failure, #{inspect(task)}, #{inspect(error)}}")
     task_finished(state, task, {:failure, error})
   end
 
@@ -162,7 +165,7 @@ defmodule DTask.Task.Dispatcher do
 
   defp dispatch_task({task, params}, node) do
     server = {DTask.Task.Executor, node}
-    Logger.info("Dispatching on node #{inspect(server)} task #{task} with parameters: #{inspect(params)}")
+    Logger.info("Dispatching on node #{inspect(server)} task #{inspect(task)} with parameters: #{inspect(params)}")
     Executor.exec_task(server, task, params)
   end
 

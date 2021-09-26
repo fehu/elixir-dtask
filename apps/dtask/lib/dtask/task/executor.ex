@@ -14,7 +14,7 @@ defmodule DTask.Task.Executor do
 
   @spec exec_task(GenServer.server, Task.t, Task.params) :: :ok
   def exec_task(server, task, params) do
-    Logger.debug("DTask.Task.Executor.exec_task")
+    Logger.debug("DTask.Task.Executor.exec_task(#{inspect(server)}, #{inspect(task)}, #{inspect(params)})")
     GenServer.cast(server, {:exec, task, params})
   end
 
@@ -27,6 +27,7 @@ defmodule DTask.Task.Executor do
 
   @impl true
   def handle_cast({:exec, task, params}, dispatcher) do
+    Logger.info("Executing task #{inspect(task)} with parameters #{inspect(params)}")
     task.exec(dispatcher, params)
     {:noreply, nil}
   end

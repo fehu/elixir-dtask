@@ -8,19 +8,19 @@ defmodule DTask.ResourceUsage.Collector do
 
   @spec start_link(non_neg_integer) :: GenServer.on_start
   def start_link(dead_timeout_millis) do
-    Logger.debug("DTask.ResourceUsage.Collector.start_link")
+    Logger.debug("DTask.ResourceUsage.Collector.start_link(#{dead_timeout_millis})")
     GenServer.start_link(__MODULE__, dead_timeout_millis, name: __MODULE__)
   end
 
   @spec report_usage(GenServer.server, usage) :: :ok
   def report_usage(server, usage) do
-    Logger.debug("DTask.ResourceUsage.Collector.report_usage")
+    Logger.debug("DTask.ResourceUsage.Collector.report_usage(#{inspect(server)}, #{inspect(usage)})")
     GenServer.cast(server, {:report, Node.self(), usage})
   end
 
   @spec get_usage(GenServer.server) :: %{node => usage}
   def get_usage(server \\ __MODULE__) do
-    Logger.debug("DTask.ResourceUsage.Collector.get_usage")
+    Logger.debug("DTask.ResourceUsage.Collector.get_usage(#{inspect(server)})")
     GenServer.call(server, :get)
   end
 
