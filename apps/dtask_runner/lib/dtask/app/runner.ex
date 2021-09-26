@@ -10,6 +10,8 @@ defmodule DTask.App.Runner do
   use Application
   require Logger
 
+  Application.ensure_started(:logger)
+
   alias DTask.App
   alias DTask.ResourceUsage.{Collector, Extractor, Reporter}
   alias DTask.Task.{Executor, Dispatcher}

@@ -8,7 +8,7 @@ defmodule DTask.Task.Executor do
 
   @spec start_link(Dispatcher.server) :: GenServer.on_start
   def start_link(dispatcher) do
-    Logger.debug("DTask.Task.Executor.start_link")
+    Logger.debug("DTask.Task.Executor.start_link") # (#{inspect(dispatcher)})
     GenServer.start_link(__MODULE__, dispatcher, name: __MODULE__)
   end
 
