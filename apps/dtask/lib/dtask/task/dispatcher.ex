@@ -8,11 +8,19 @@ defmodule DTask.Task.Dispatcher do
   require Logger
 
   @type server :: GenServer.server
+
+  @type executors_state :: %{
+    idle: [node],
+    busy: [node]
+  }
+
   @type task :: {Task.t, Task.params}
+  @typep task_wip :: {task, %{node: node, progress: term}}
+  @typep task_finished :: {task, {:success | :failure, term}}
   @type tasks_state :: %{
                          pending: [task],
-                         wip: [{task, %{node: node, progress: term}}],
-                         finished: [{task, {:success | :failure, term}}]
+                         wip: [task_wip],
+                         finished: [task_finished]
                        }
 
   @spec start_link(String.t, [task, ...]) :: GenServer.on_start
@@ -23,9 +31,34 @@ defmodule DTask.Task.Dispatcher do
 
   # Queries
 
-  @spec get_tasks_state(server) :: tasks_state
-  def get_tasks_state(server \\ __MODULE__) do
-    GenServer.call(server, :tasks_state)
+  @spec get_executors(server) :: executors_state
+  def get_executors(server \\ __MODULE__) do
+    GenServer.call(server, :executors)
+  end
+
+  @spec finished?(server) :: boolean
+  def finished?(server \\ __MODULE__) do
+    GenServer.call(server, :finished?)
+  end
+
+  @spec get_tasks(server) :: tasks_state
+  def get_tasks(server \\ __MODULE__) do
+    GenServer.call(server, :tasks)
+  end
+
+  @spec get_pending(server) :: [task]
+  def get_pending(server \\ __MODULE__) do
+    GenServer.call(server, :pending)
+  end
+
+  @spec get_running(server) :: [task_wip]
+  def get_running(server \\ __MODULE__) do
+    GenServer.call(server, :wip)
+  end
+
+  @spec get_finished(server) :: [task_finished]
+  def get_finished(server \\ __MODULE__) do
+    GenServer.call(server, :finished)
   end
 
   # Execution notifications (used by `DTask.Task.Executor`)
@@ -55,6 +88,7 @@ defmodule DTask.Task.Dispatcher do
     executors = Node.list() |> Enum.filter(&executor_node?(exec_node_prefix, &1))
     Logger.notice("Available executors: #{inspect(executors)}")
     state = %{
+      finished?: false,
       tasks: %{
         pending: tasks,
         wip: [],
@@ -76,8 +110,33 @@ defmodule DTask.Task.Dispatcher do
   # Tasks state queries
 
   @impl true
-  def handle_call(:tasks_state, _from, state) do
+  def handle_call(:executors, _from, state) do
+    {:reply, state.executors, state}
+  end
+
+  @impl true
+  def handle_call(:finished?, _from, state) do
+    {:reply, state.finished?, state}
+  end
+
+  @impl true
+  def handle_call(:tasks, _from, state) do
     {:reply, state.tasks, state}
+  end
+
+  @impl true
+  def handle_call(:pending, _from, state) do
+    {:reply, state.tasks.pending, state}
+  end
+
+  @impl true
+  def handle_call(:wip, _from, state) do
+    {:reply, state.tasks.wip, state}
+  end
+
+  @impl true
+  def handle_call(:finished, _from, state) do
+    {:reply, state.tasks.finished, state}
   end
 
   # Task dispatch
@@ -91,8 +150,11 @@ defmodule DTask.Task.Dispatcher do
           Logger.notice("============================")
           Logger.notice("Finished executing all tasks")
           Logger.notice("============================")
+          new_state = %{state | :finished? => true}
+          {:noreply, new_state}
+        else
+          {:noreply, state}
         end
-        {:noreply, state}
       {[next | pending], [node | idle]} ->
         dispatch_task(next, node)
         wip = {next, %{progress: :dispatched, node: node}}
@@ -193,5 +255,20 @@ defmodule DTask.Task.Dispatcher do
   defp keyupdate(list, key, position, update) do
     found = List.keyfind(list, key, position)
     List.keyreplace(list, key, position, update.(found))
+  end
+end
+
+defmodule DTask.Task.Dispatcher.CLI do
+  defmacro __using__(_) do
+    quote do
+      alias DTask.Task.Dispatcher
+
+      defdelegate executors(), to: Dispatcher, as: :get_executors
+      defdelegate finished?(), to: Dispatcher, as: :finished?
+      defdelegate tasks(),     to: Dispatcher, as: :get_tasks
+      defdelegate tasks_pending(),   to: Dispatcher, as: :get_pending
+      defdelegate tasks_running(),   to: Dispatcher, as: :get_running
+      defdelegate tasks_finished(),  to: Dispatcher, as: :get_finished
+    end
   end
 end

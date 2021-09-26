@@ -53,3 +53,13 @@ defmodule DTask.ResourceUsage.Collector do
   end
 
 end
+
+defmodule DTask.ResourceUsage.Collector.CLI do
+  defmacro __using__(_) do
+    quote do
+      alias DTask.ResourceUsage.Collector
+
+      defdelegate resource_usage(), to: Collector, as: :get_usage
+    end
+  end
+end
