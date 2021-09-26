@@ -29,6 +29,6 @@ defmodule DTask.Task.Executor do
   def handle_cast({:exec, task, params}, dispatcher) do
     Logger.info("Executing task #{inspect(task)} with parameters #{inspect(params)}")
     task.exec(dispatcher, params)
-    {:noreply, nil}
+    {:noreply, dispatcher}
   end
 end
