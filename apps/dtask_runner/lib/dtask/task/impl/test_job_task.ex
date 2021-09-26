@@ -14,15 +14,15 @@ defmodule DTask.Task.Impl.TestJobTask do
     cmd = "elixir dev/test_job.exs"
     dir = "."
     handle_data = fn
-      'Working: ' ++ progress ->
+      _, 'Working: ' ++ progress ->
         report = String.trim(List.to_string(progress))
         Dispatcher.report_progress(dispatcher, task, report)
-      _ ->
+      _, _ ->
         :do_nothing
     end
     handle_exit = fn
-      0 -> Dispatcher.report_success(dispatcher, task, "done")
-      c -> Dispatcher.report_failure(dispatcher, task, {:non_zero_exit, c})
+      _, 0 -> Dispatcher.report_success(dispatcher, task, "done")
+      _, c -> Dispatcher.report_failure(dispatcher, task, {:non_zero_exit, c})
     end
     ShellCmd.exec(cmd, dir, handle_data, handle_exit)
   end

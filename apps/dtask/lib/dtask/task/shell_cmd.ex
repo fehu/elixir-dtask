@@ -4,13 +4,14 @@ defmodule DTask.Task.ShellCmd do
   @spec exec(
           cmd :: String.t,
           dir :: String.t,
-          handle_data :: (String.t -> no_return),
-          handle_exit :: (non_neg_integer -> x)
-        ) :: x
-        when x: var
-  def exec(cmd, dir, handle_data, handle_exit) do
+          state0 :: state,
+          handle_data :: (state, String.t -> state),
+          handle_exit :: (state, non_neg_integer -> out)
+        ) :: out
+        when state: var, out: var
+  def exec(cmd, dir, state0 \\ nil, handle_data, handle_exit) do
     port = open_port(cmd, dir)
-    listen_port(port, handle_data, handle_exit)
+    listen_port(port, state0, handle_data, handle_exit)
   end
 
   defp open_port(cmd, dir) do
@@ -20,13 +21,13 @@ defmodule DTask.Task.ShellCmd do
     ]
   end
 
-  defp listen_port(port, handle_data, handle_exit) do
+  defp listen_port(port, state, handle_data, handle_exit) do
     receive do
       {^port, {:data, data}} ->
-        handle_data.(data)
-        listen_port(port, handle_data, handle_exit)
+        new_state = handle_data.(state, data)
+        listen_port(port, new_state, handle_data, handle_exit)
       {^port, {:exit_status, exit_code}} ->
-        handle_exit.(exit_code)
+        handle_exit.(state, exit_code)
     end
   end
 
