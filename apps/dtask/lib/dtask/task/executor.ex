@@ -4,14 +4,17 @@ defmodule DTask.Task.Executor do
   alias DTask.Task
 
   use GenServer
+  require Logger
 
   @spec start_link(Dispatcher.server) :: GenServer.on_start
   def start_link(dispatcher) do
+    Logger.debug("DTask.Task.Executor.start_link")
     GenServer.start_link(__MODULE__, dispatcher, name: __MODULE__)
   end
 
   @spec exec_task(GenServer.server, Task.t, Task.params) :: :ok
   def exec_task(server, task, params) do
+    Logger.debug("DTask.Task.Executor.exec_task")
     GenServer.cast(server, {:exec, task, params})
   end
 
