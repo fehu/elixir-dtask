@@ -85,19 +85,23 @@ defmodule DTask.Task.Dispatcher do
   @impl true
   def handle_info(:next, state) do
     Logger.debug(["DTask.Task.Dispatcher.handle_info(:next, #{inspect(state)})"])
-    new_state =
-      case {state.tasks.pending, state.executors.idle} do
-        {[], _} ->
-          state
-        {[next | pending], [node | idle]} ->
-          dispatch_task(next, node)
-          wip = {next, %{progress: :dispatched, node: node}}
-          state |> put_in([:tasks, :pending], pending)
-                |> put_in([:executors, :idle], idle)
-                |> update_in([:tasks, :wip], &[wip | &1])
-                |> update_in([:executors, :busy], &[node | &1])
-      end
-    {:noreply, new_state}
+    case {state.tasks.pending, state.executors.idle} do
+      {[], _} ->
+        if Enum.empty?(state.tasks.wip) do
+          Logger.notice("============================")
+          Logger.notice("Finished executing all tasks")
+          Logger.notice("============================")
+        end
+        {:noreply, state}
+      {[next | pending], [node | idle]} ->
+        dispatch_task(next, node)
+        wip = {next, %{progress: :dispatched, node: node}}
+        new_state = state |> put_in([:tasks, :pending], pending)
+                          |> put_in([:executors, :idle], idle)
+                          |> update_in([:tasks, :wip], &[wip | &1])
+                          |> update_in([:executors, :busy], &[node | &1])
+        {:noreply, new_state}
+    end
   end
 
   # Nodes discovery
