@@ -104,29 +104,33 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_info({:nodeup, node}, state) do
-    {added, new_state} = if executor_node?(state.exec_node_prefix, node) do
-                            Logger.notice("New executor node discovered: #{node}")
-                            {true, update_in(state.executors.idle, &[node | &1])}
-                         else
-                           {false, state}
-                         end
-    if added, do: dispatch_next()
-    {:noreply, new_state}
+    if executor_node?(state.exec_node_prefix, node) do
+      Logger.notice("New executor node discovered: #{node}")
+      new_state = update_in(state.executors.idle, &[node | &1])
+      dispatch_next()
+      {:noreply, new_state}
+    else
+      {:noreply, state}
+    end
   end
 
   @impl true
   def handle_info({:nodedown, node}, state) do
-    Logger.warning("Lost connection to executor: #{node}")
-    task0 = Enum.find(state.tasks.wip, fn {_, v} -> v.node == node end)
-    {_, new_state0} =
-      if task0 do
-        task_finished_upd(state, elem(task0, 0), {:error, :nodedown})
-      else
-        {nil, state}
-      end
-    new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
-                           |> update_in([:executors, :idle], &List.delete(&1, node))
-    {:noreply, new_state}
+    if executor_node?(state.exec_node_prefix, node) do
+      Logger.warning("Lost connection to executor: #{node}")
+      task0 = Enum.find(state.tasks.wip, fn {_, v} -> v.node == node end)
+      {_, new_state0} =
+        if task0 do
+          task_finished_upd(state, elem(task0, 0), {:error, :nodedown})
+        else
+          {nil, state}
+        end
+      new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
+                  |> update_in([:executors, :idle], &List.delete(&1, node))
+      {:noreply, new_state}
+    else
+      {:noreply, state}
+    end
   end
 
   # Execution callbacks (used by `DTask.Task.Executor`)
