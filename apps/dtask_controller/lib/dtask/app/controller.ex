@@ -9,8 +9,6 @@ defmodule DTask.App.Controller do
   """
   use Application
 
-  Application.ensure_started(:logger)
-
   alias DTask.App
   alias DTask.ResourceUsage.Collector
   alias DTask.Task.Dispatcher

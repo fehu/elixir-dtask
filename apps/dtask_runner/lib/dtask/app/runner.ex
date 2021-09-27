@@ -10,8 +10,6 @@ defmodule DTask.App.Runner do
   use Application
   require Logger
 
-  Application.ensure_started(:logger)
-
   alias DTask.App
   alias DTask.ResourceUsage.{Collector, Extractor, Reporter}
   alias DTask.Task.{Executor, Dispatcher}
@@ -34,12 +32,6 @@ defmodule DTask.App.Runner do
     # Ensure node started
     App.ensure_node_alive!(cfg, :exec_node_prefix)
 
-    # Connect to master node
-    case Node.connect(cfg.master_node) do
-      true -> Logger.notice("Connected to master node #{cfg.master_node}")
-      _    -> raise "Failed to connect to node #{cfg.master_node}"
-    end
-
     children = [
       %{
         id: Executor,
@@ -56,17 +48,16 @@ defmodule DTask.App.Runner do
       }
     ]
 
+    # Start supervisor
     opts = [strategy: :one_for_one, name: DTask.App.Runner.Supervisor]
-    Supervisor.start_link(children, opts)
+    supervisor = Supervisor.start_link(children, opts)
+
+    # Connect to master node
+    case Node.connect(cfg.master_node) do
+      true -> Logger.notice("Connected to master node #{cfg.master_node}")
+      _    -> raise "Failed to connect to node #{cfg.master_node}"
+    end
+
+    supervisor
   end
-
-#  defp parse_args(cfg) do
-#    args = System.argv()
-#    IO.inspect(args, label: args)
-#    case args do
-#      [master] -> String.to_atom(cfg.ctrl_node_prefix <> master)
-#      _        -> raise "`DTask.App.Runner` expects 1 argument: master node host"
-#    end
-#  end
-
 end
