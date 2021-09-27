@@ -24,7 +24,7 @@ defmodule DTask.App do
           {:ok, node}
         end
     else
-      Logger.info("Node already alive: #{node}")
+      Logger.info("Node already alive: #{Node.self()}")
       {:ok, Node.self()}
     end
   end

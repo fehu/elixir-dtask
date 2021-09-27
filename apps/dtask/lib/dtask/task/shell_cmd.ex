@@ -6,7 +6,7 @@ defmodule DTask.Task.ShellCmd do
           dir :: String.t,
           state0 :: state,
           handle_data :: (state, String.t -> state),
-          handle_exit :: (state, non_neg_integer -> out)
+          handle_exit :: (state, integer -> out)
         ) :: out
         when state: var, out: var
   def exec(cmd, dir, state0 \\ nil, handle_data, handle_exit) do
