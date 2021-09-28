@@ -70,7 +70,7 @@ defmodule DTask.Task.Impl.RunMLM do
             Logger.debug("Running Evaluation")
             %{state | :stage => :evaluating, :capture => [:params, :eval]}
 
-          {:info, %{file: "trainer.py", message: other}} when state.capture ->
+          {:info, %{file: "trainer.py", message: other}} when not is_nil state.capture ->
             do_capture.(state, other, :info)
 
           {:info, _} ->
@@ -90,17 +90,17 @@ defmodule DTask.Task.Impl.RunMLM do
             Logger.error(error)
             Map.put(state, :error, error)
 
-          {:mismatch, ""} when state.capture ->
+          {:mismatch, ""} when not is_nil state.capture ->
             %{state | :capture => nil}
 
-          {:mismatch, other} when state.capture ->
+          {:mismatch, other} when not is_nil state.capture ->
             do_capture.(state, other, :mismatch)
 
-          {:mismatch, "***** train metrics *****"} when not state.capture ->
+          {:mismatch, "***** train metrics *****"} when is_nil state.capture ->
             Logger.debug("train metrics")
             %{state | :capture => [:metrics, :train]}
 
-          {:mismatch, "***** eval metrics *****"} when not state.capture ->
+          {:mismatch, "***** eval metrics *****"} when is_nil state.capture ->
             Logger.debug("eval metrics")
             %{state | :capture => [:metrics, :eval]}
 
