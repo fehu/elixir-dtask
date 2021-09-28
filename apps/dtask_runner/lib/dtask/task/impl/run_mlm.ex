@@ -169,9 +169,10 @@ defmodule DTask.Task.Impl.RunMLM do
   end
 
   @spec parse_tuple(String.t, String.t) :: {String.t, String.t} | nil
-  defp parse_tuple(data, sep \\ "=") do
+  defp parse_tuple(data, sep \\ " = ") do
     case String.split(data, sep) do
       []         -> nil
+      [_]        -> nil
       [lhs, rhs] -> {String.trim(lhs), String.trim(rhs)}
       list ->
         {init, [last]} = Enum.split(list, length(list) - 1)
