@@ -25,7 +25,13 @@ end
 # # # # # # # # # # # #
 
 config :dtask_controller, tasks: [
-  Def.train_mlm,
-  Def.train_mlm
+  Def.train_mlm [
+    :do_train,
+    :do_eval,
+    :overwrite_output_dir,
+    per_device_train_batch_size: 4,
+    per_device_eval_batch_size: 8,
+    max_steps: 10
+  ]
 ]
 
