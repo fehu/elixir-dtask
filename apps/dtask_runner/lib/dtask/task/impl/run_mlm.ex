@@ -51,7 +51,7 @@ defmodule DTask.Task.Impl.RunMLM do
     handle_data = fn state0, data ->
       lines = String.split(String.Chars.to_string(data), "\n", trim: true)
       Enum.reduce lines, state0, fn line, state ->
-        case parse_line(line) do
+        case parse_line(String.trim(line)) do
           {:info, %{file: "trainer.py", message: "***** Running training *****"}} ->
             Logger.debug("Running training")
             %{state | :stage => :training, :capture => [:params, :train]}
