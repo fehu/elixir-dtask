@@ -48,6 +48,16 @@ defmodule DTask.Task.Impl.RunMLM do
       captured: %{params: empty_metrics_like, metrics: empty_metrics_like}
     }
 
+    do_capture = fn state, txt, tip ->
+      case parse_tuple(txt) do
+        {k, v} ->
+          Logger.debug("Capture #{tip}")
+          put_in(state, [:captured] ++ state.capture ++ [k], v)
+        nil ->
+          state
+      end
+    end
+
     handle_data = fn state0, data ->
       lines = String.split(String.Chars.to_string(data), "\n", trim: true)
       Enum.reduce lines, state0, fn line, state ->
@@ -59,6 +69,9 @@ defmodule DTask.Task.Impl.RunMLM do
           {:info, %{file: "trainer.py", message: "***** Running Evaluation *****"}} ->
             Logger.debug("Running Evaluation")
             %{state | :stage => :evaluating, :capture => [:params, :eval]}
+
+          {:info, %{file: "trainer.py", message: other}} when state.capture ->
+            do_capture.(state, other, :info)
 
           {:info, _} ->
             %{state | :capture => nil}
@@ -81,13 +94,7 @@ defmodule DTask.Task.Impl.RunMLM do
             %{state | :capture => nil}
 
           {:mismatch, other} when state.capture ->
-            case parse_tuple(other) do
-              {k, v} ->
-                Logger.debug("Capture")
-                put_in(state, [:captured] ++ state.capture ++ [k], v)
-              nil ->
-                state
-            end
+            do_capture.(state, other, :mismatch)
 
           {:mismatch, "***** train metrics *****"} when not state.capture ->
             Logger.debug("train metrics")
