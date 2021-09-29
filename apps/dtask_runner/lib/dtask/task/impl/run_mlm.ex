@@ -8,7 +8,12 @@ defmodule DTask.Task.Impl.RunMLM do
   @behaviour Task
 
   @type mlm_params :: [atom | {atom, term}]
-  @type params :: %{dir: String.t, script: String.t, mlm_params: mlm_params}
+  @type params :: %{
+                    required(:dir)        => String.t,
+                    required(:script)     => String.t,
+                    optional(:sh_opts)    => [ShellCmd.opt],
+                    required(:mlm_params) => mlm_params
+                  }
 
   @typep stage :: :loading | :training | :evaluating
   @typep result :: %{
@@ -58,55 +63,52 @@ defmodule DTask.Task.Impl.RunMLM do
       end
     end
 
-    handle_data = fn state0, data ->
-      lines = String.split(String.Chars.to_string(data), "\n", trim: true)
-      Enum.reduce lines, state0, fn line, state ->
-        case parse_line(line) do
-          {:info, %{file: "trainer.py", message: "***** Running training *****"}} ->
-            Logger.debug("Running training")
-            %{state | :stage => :training, :capture => [:params, :train]}
+    handle_data = fn state, line ->
+      case parse_line(line) do
+        {:info, %{file: "trainer.py", message: "***** Running training *****"}} ->
+          Logger.debug("Running training")
+          %{state | :stage => :training, :capture => [:params, :train]}
 
-          {:info, %{file: "trainer.py", message: "***** Running Evaluation *****"}} ->
-            Logger.debug("Running Evaluation")
-            %{state | :stage => :evaluating, :capture => [:params, :eval]}
+        {:info, %{file: "trainer.py", message: "***** Running Evaluation *****"}} ->
+          Logger.debug("Running Evaluation")
+          %{state | :stage => :evaluating, :capture => [:params, :eval]}
 
-          {:info, %{file: "trainer.py", message: other}} when not is_nil state.capture ->
-            do_capture.(state, other, :info)
+        {:info, %{file: "trainer.py", message: other}} when not is_nil state.capture ->
+          do_capture.(state, other, :info)
 
-          {:info, _} ->
-            %{state | :capture => nil}
+        {:info, _} ->
+          %{state | :capture => nil}
 
-          {:progress, progress} when progress.label != "" ->
-            Logger.debug("Report progress")
-            Dispatcher.report_progress(dispatcher, task, progress)
-            %{state | :capture => nil}
+        {:progress, progress} when progress.label != "" ->
+          Logger.debug("Report progress")
+          Dispatcher.report_progress(dispatcher, task, progress)
+          %{state | :capture => nil}
 
-          {:progress, progress=%{label: ""}} when state.stage in [:training, :evaluating] ->
-            Logger.debug("Report progress")
-            Dispatcher.report_progress(dispatcher, task, %{progress | :label => state.stage})
-            state
+        {:progress, progress=%{label: ""}} when state.stage in [:training, :evaluating] ->
+          Logger.debug("Report progress")
+          Dispatcher.report_progress(dispatcher, task, %{progress | :label => state.stage})
+          state
 
-          {:error, error} ->
-            Logger.error(error)
-            Map.put(state, :error, error)
+        {:error, error} ->
+          Logger.error(error)
+          Map.put(state, :error, error)
 
-          {:mismatch, ""} when not is_nil state.capture ->
-            %{state | :capture => nil}
+        {:mismatch, ""} when not is_nil state.capture ->
+          %{state | :capture => nil}
 
-          {:mismatch, other} when not is_nil state.capture ->
-            do_capture.(state, other, :mismatch)
+        {:mismatch, other} when not is_nil state.capture ->
+          do_capture.(state, other, :mismatch)
 
-          {:mismatch, "***** train metrics *****"} when is_nil state.capture ->
-            Logger.debug("train metrics")
-            %{state | :capture => [:metrics, :train]}
+        {:mismatch, "***** train metrics *****"} when is_nil state.capture ->
+          Logger.debug("train metrics")
+          %{state | :capture => [:metrics, :train]}
 
-          {:mismatch, "***** eval metrics *****"} when is_nil state.capture ->
-            Logger.debug("eval metrics")
-            %{state | :capture => [:metrics, :eval]}
+        {:mismatch, "***** eval metrics *****"} when is_nil state.capture ->
+          Logger.debug("eval metrics")
+          %{state | :capture => [:metrics, :eval]}
 
-          _ ->
-            state
-        end
+        _ ->
+          state
       end
     end
 
@@ -128,7 +130,8 @@ defmodule DTask.Task.Impl.RunMLM do
 
     # Execute script
     Logger.info("Executing '#{cmd}' at '#{params.dir}'")
-    ShellCmd.exec(cmd, params.dir, state0, handle_data, handle_exit)
+    sh_opts = Map.get(params, :sh_opts, [])
+    ShellCmd.exec(cmd, params.dir, state0, handle_data, handle_exit, sh_opts)
   end
 
 

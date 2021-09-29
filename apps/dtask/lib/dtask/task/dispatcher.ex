@@ -1,5 +1,8 @@
 defmodule DTask.Task.Dispatcher do
-  @moduledoc false
+  @moduledoc """
+  Dispatches Tasks to available Executors.
+  Keeps track of Task execution state (progress & result).
+  """
 
   alias DTask.Task
   alias DTask.Task.Executor
@@ -15,11 +18,11 @@ defmodule DTask.Task.Dispatcher do
   }
 
   @type task :: {Task.t, Task.params}
-  @typep task_wip :: {task, %{node: node, progress: term}}
+  @typep task_running :: {task, %{node: node, progress: term}}
   @typep task_finished :: {task, {:success | :failure, term}}
   @type tasks_state :: %{
                          pending: [task],
-                         wip: [task_wip],
+                         running: [task_running],
                          finished: [task_finished]
                        }
 
@@ -51,9 +54,9 @@ defmodule DTask.Task.Dispatcher do
     GenServer.call(server, :pending)
   end
 
-  @spec get_running(server) :: [task_wip]
+  @spec get_running(server) :: [task_running]
   def get_running(server \\ __MODULE__) do
-    GenServer.call(server, :wip)
+    GenServer.call(server, :running)
   end
 
   @spec get_finished(server) :: [task_finished]
@@ -91,7 +94,7 @@ defmodule DTask.Task.Dispatcher do
       finished?: false,
       tasks: %{
         pending: tasks,
-        wip: [],
+        running: [],
         finished: []
       },
       executors: %{
@@ -104,7 +107,7 @@ defmodule DTask.Task.Dispatcher do
     # Monitor :nodeup/:nodedown events
     :net_kernel.monitor_nodes(true)
 
-    {:ok, state}
+    {:ok, state, {:continue, :dispatch_next}}
   end
 
   # Tasks state queries
@@ -130,8 +133,8 @@ defmodule DTask.Task.Dispatcher do
   end
 
   @impl true
-  def handle_call(:wip, _from, state) do
-    {:reply, state.tasks.wip, state}
+  def handle_call(:running, _from, state) do
+    {:reply, state.tasks.running, state}
   end
 
   @impl true
@@ -142,14 +145,12 @@ defmodule DTask.Task.Dispatcher do
   # Task dispatch
 
   @impl true
-  def handle_info(:next, state) do
-    Logger.debug(["DTask.Task.Dispatcher.handle_info(:next, #{inspect(state)})"])
+  def handle_continue(:dispatch_next, state) do
+    Logger.debug(["DTask.Task.Dispatcher.handle_continue(:dispatch_next, #{inspect(state)})"])
     case {state.tasks.pending, state.executors.idle} do
       {[], _} ->
-        if Enum.empty?(state.tasks.wip) do
-          Logger.notice("============================")
+        if Enum.empty?(state.tasks.running) do
           Logger.notice("Finished executing all tasks")
-          Logger.notice("============================")
           new_state = %{state | :finished? => true}
           {:noreply, new_state}
         else
@@ -157,12 +158,14 @@ defmodule DTask.Task.Dispatcher do
         end
       {[next | pending], [node | idle]} ->
         dispatch_task(next, node)
-        wip = {next, %{progress: :dispatched, node: node}}
+        running = {next, %{progress: :dispatched, node: node}}
         new_state = state |> put_in([:tasks, :pending], pending)
                           |> put_in([:executors, :idle], idle)
-                          |> update_in([:tasks, :wip], &[wip | &1])
+                          |> update_in([:tasks, :running], &[running | &1])
                           |> update_in([:executors, :busy], &[node | &1])
         {:noreply, new_state}
+      {_, []} ->
+        {:noreply, state}
     end
   end
 
@@ -173,8 +176,7 @@ defmodule DTask.Task.Dispatcher do
     if executor_node?(state.exec_node_prefix, node) do
       Logger.notice("New executor node discovered: #{node}")
       new_state = update_in(state.executors.idle, &[node | &1])
-      dispatch_next()
-      {:noreply, new_state}
+      {:noreply, new_state, {:continue, :dispatch_next}}
     else
       {:noreply, state}
     end
@@ -184,7 +186,7 @@ defmodule DTask.Task.Dispatcher do
   def handle_info({:nodedown, node}, state) do
     if executor_node?(state.exec_node_prefix, node) do
       Logger.warning("Lost connection to executor: #{node}")
-      task0 = Enum.find(state.tasks.wip, fn {_, v} -> v.node == node end)
+      task0 = Enum.find(state.tasks.running, fn {_, v} -> v.node == node end)
       {_, new_state0} =
         if task0 do
           task_finished_upd(state, elem(task0, 0), {:error, :nodedown})
@@ -192,7 +194,7 @@ defmodule DTask.Task.Dispatcher do
           {nil, state}
         end
       new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
-                  |> update_in([:executors, :idle], &List.delete(&1, node))
+                             |> update_in([:executors, :idle], &List.delete(&1, node))
       {:noreply, new_state}
     else
       {:noreply, state}
@@ -204,7 +206,7 @@ defmodule DTask.Task.Dispatcher do
   @impl true
   def handle_cast({:progress, task, progress}, state) do
     Logger.debug("DTask.Task.Dispatcher.handle_cast {:progress, #{inspect(task)}, #{inspect(progress)}}")
-    new_state = update_in state.tasks.wip,
+    new_state = update_in state.tasks.running,
                           &keyupdate(&1, task, 0, fn {_, m} -> {task, %{m | :progress => progress}} end)
     {:noreply, new_state}
   end
@@ -227,8 +229,6 @@ defmodule DTask.Task.Dispatcher do
     String.starts_with?(Atom.to_string(node), exec_node_prefix <> "@")
   end
 
-  defp dispatch_next(), do: send(self(), :next)
-
   defp dispatch_task({task, params}, node) do
     server = {DTask.Task.Executor, node}
     Logger.info("Dispatching on node #{inspect(server)} task #{inspect(task)} with parameters: #{inspect(params)}")
@@ -240,15 +240,14 @@ defmodule DTask.Task.Dispatcher do
     {node, new_state0} = task_finished_upd(state, task, outcome)
     new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
                            |> update_in([:executors, :idle], &[node | &1])
-    dispatch_next()
-    {:noreply, new_state}
+    {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
   defp task_finished_upd(state, task, outcome) do
-    {{_, wip}, new_state} =
+    {{_, running}, new_state} =
       state |> update_in([:tasks, :finished], &[{task, outcome} | &1])
-            |> get_and_update_in([:tasks, :wip], &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
-    {wip.node, new_state}
+            |> get_and_update_in([:tasks, :running], &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
+    {running.node, new_state}
   end
 
   @spec keyupdate([tuple], any, non_neg_integer, (tuple -> tuple)) :: [tuple]
