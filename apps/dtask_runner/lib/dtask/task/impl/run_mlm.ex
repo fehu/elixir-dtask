@@ -38,8 +38,7 @@ defmodule DTask.Task.Impl.RunMLM do
     task = {__MODULE__, params}
 
     File.mkdir(Path.join(params.dir, "logs"))
-    now = String.replace(DateTime.to_string(DateTime.utc_now()), " ", "")
-    file_template = Path.join("logs", "#{params.script}.#{now}.")
+    file_template = Path.join("logs", "#{params.script}.#{local_time()}.")
     info_file = file_template <> "info"
     log_file = file_template <> "log"
 
@@ -190,5 +189,18 @@ defmodule DTask.Task.Impl.RunMLM do
                 flag   -> "--#{flag}"
               end)
            |> Enum.join(" ")
+  end
+
+  defp local_time do
+    {{dy, dm, dd},{th, tm, ts}} = :calendar.local_time
+    date = Enum.join([zero_pad(dy, 4), zero_pad(dm, 2), zero_pad(dd, 2)], "-")
+    time = Enum.join([zero_pad(th, 2), zero_pad(tm, 2), zero_pad(ts, 2)], ":")
+    date <> "--" <> time
+  end
+
+  # Copied from `Calendar.ISO`
+  defp zero_pad(val, count) when val >= 0 do
+    num = Integer.to_string(val)
+    :binary.copy("0", max(count - byte_size(num), 0)) <> num
   end
 end
