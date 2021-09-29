@@ -64,6 +64,18 @@ defmodule DTask.Task.Dispatcher do
     GenServer.call(server, :finished)
   end
 
+  # Commands
+
+  @spec add_task(server, task) :: :ok
+  def add_task(server \\ __MODULE__, task) do
+    GenServer.cast(server, {:add_tasks, [task]})
+  end
+
+  @spec add_tasks(server, [task, ...]) :: :ok
+  def add_tasks(server \\ __MODULE__, tasks) do
+    GenServer.cast(server, {:add_tasks, tasks})
+  end
+
   # Execution notifications (used by `DTask.Task.Executor`)
 
   @spec report_progress(server, task, term) :: :ok
@@ -201,6 +213,14 @@ defmodule DTask.Task.Dispatcher do
     end
   end
 
+  # Commands
+
+  @impl true
+  def handle_cast({:add_tasks, tasks}, state) do
+    new_state = update_in(state.tasks.pending, &Enum.concat(&1, tasks))
+    {:noreply, new_state, {:continue, :dispatch_next}}
+  end
+
   # Execution callbacks (used by `DTask.Task.Executor`)
 
   @impl true
@@ -262,6 +282,11 @@ defmodule DTask.Task.Dispatcher.CLI do
     quote do
       alias DTask.Task.Dispatcher
 
+      # Commands
+      defdelegate add_task(task),   to: Dispatcher
+      defdelegate add_tasks(tasks), to: Dispatcher
+
+      # Queries
       defdelegate executors(), to: Dispatcher, as: :get_executors
       defdelegate finished?(), to: Dispatcher, as: :finished?
       defdelegate tasks(),     to: Dispatcher, as: :get_tasks
