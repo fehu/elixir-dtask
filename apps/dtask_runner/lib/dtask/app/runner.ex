@@ -11,8 +11,8 @@ defmodule DTask.App.Runner do
   require Logger
 
   alias DTask.App
-  alias DTask.ResourceUsage.{Collector, Extractor, Reporter}
-  alias DTask.Task.{Executor, Dispatcher}
+  alias DTask.ResourceUsage
+  alias DTask.Task
 
   @app_name :dtask_runner
 
@@ -21,8 +21,8 @@ defmodule DTask.App.Runner do
                     exec_node_prefix: String.t,
                     resource_report_interval: non_neg_integer,
                     resource_usage: %{
-                      extractor: Extractor.t,
-                      params: Extractor.params
+                      extractor: ResourceUsage.Extractor.t,
+                      params: ResourceUsage.Extractor.params
                     }
                   }
 
@@ -34,13 +34,16 @@ defmodule DTask.App.Runner do
 
     children = [
       %{
-        id: Executor,
-        start: {Executor, :start_link, [{Dispatcher, cfg.master_node}]}
+        id: Task.Executor,
+        start: {Task.Executor, :start_link, [
+          {Task.Dispatcher, cfg.master_node},
+          Task.Reporter.DispatcherReporter.Builder
+        ]}
       },
       %{
-        id: Reporter,
-        start: {Reporter, :start_link, [
-          {Collector, cfg.master_node},
+        id: ResourceUsage.Reporter,
+        start: {ResourceUsage.Reporter, :start_link, [
+          {ResourceUsage.Collector, cfg.master_node},
           cfg.resource_report_interval,
           cfg.resource_usage.extractor,
           cfg.resource_usage.params

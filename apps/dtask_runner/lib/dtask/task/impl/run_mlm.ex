@@ -2,7 +2,7 @@ defmodule DTask.Task.Impl.RunMLM do
   @moduledoc false
 
   alias DTask.Task
-  alias DTask.Task.{Dispatcher, ShellCmd}
+  alias DTask.Task.{Reporter, ShellCmd}
   require Logger
 
   @behaviour Task
@@ -15,17 +15,18 @@ defmodule DTask.Task.Impl.RunMLM do
                     required(:mlm_params) => mlm_params
                   }
 
+  @type result :: %{
+                    params: %{
+                      train: %{String.t => String.t},
+                      eval: %{String.t => String.t}
+                    },
+                    metrics: %{
+                      train: %{String.t => String.t},
+                      eval: %{String.t => String.t}
+                    }
+                  }
+
   @typep stage :: :loading | :training | :evaluating
-  @typep result :: %{
-                     params: %{
-                       train: %{String.t => String.t},
-                       eval: %{String.t => String.t}
-                     },
-                     metrics: %{
-                       train: %{String.t => String.t},
-                       eval: %{String.t => String.t}
-                     }
-                   }
   @typep state :: %{
                     required(:stage)    => stage,
                     required(:capture)  => atom | [atom, ...] | nil,
@@ -33,10 +34,8 @@ defmodule DTask.Task.Impl.RunMLM do
                     optional(:error)    => String.t
                   }
 
-  @spec exec(Dispatcher.server, params) :: no_return
-  def exec(dispatcher, params) do
-    task = {__MODULE__, params}
-
+  @spec exec(Reporter.t, params) :: {:success, result} | {:failure, term}
+  def exec(reporter, params) do
     File.mkdir(Path.join(params.dir, "logs"))
     file_template = Path.join("logs", "#{params.script}.#{local_time()}.")
     info_file = file_template <> "info"
@@ -80,12 +79,12 @@ defmodule DTask.Task.Impl.RunMLM do
 
         {:progress, progress} when progress.label != "" ->
           Logger.debug("Report progress")
-          Dispatcher.report_progress(dispatcher, task, progress)
+          Reporter.progress(reporter, progress)
           %{state | :capture => nil}
 
         {:progress, progress=%{label: ""}} when state.stage in [:training, :evaluating] ->
           Logger.debug("Report progress")
-          Dispatcher.report_progress(dispatcher, task, %{progress | :label => state.stage})
+          Reporter.progress(reporter, %{progress | :label => state.stage})
           state
 
         {:error, error} ->
@@ -112,12 +111,9 @@ defmodule DTask.Task.Impl.RunMLM do
     end
 
     handle_exit = fn
-      %{error: error}, _ ->
-        Dispatcher.report_failure(dispatcher, task, error)
-      %{captured: result}, 0 ->
-        Dispatcher.report_success(dispatcher, task, result)
-      state, exit_code ->
-        Dispatcher.report_failure(dispatcher, task, {:non_zero_exit, exit_code, state})
+      %{error: error}, _     -> {:failure, error}
+      %{captured: result}, 0 -> {:success, result}
+      state, exit_code       -> {:failure, {:non_zero_exit, exit_code, state}}
     end
 
     # Write info file

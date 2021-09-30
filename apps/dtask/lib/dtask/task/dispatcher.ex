@@ -95,16 +95,10 @@ defmodule DTask.Task.Dispatcher do
     GenServer.cast(server, {:progress, task, progress})
   end
 
-  @spec report_success(server, task, term) :: :ok
-  def report_success(server, task, result) do
-    Logger.debug("DTask.Task.Dispatcher.report_success(#{inspect(server)}, #{inspect(task)}, #{inspect(result)})")
-    GenServer.cast(server, {:success, task, result})
-  end
-
-  @spec report_failure(server, task, term) :: :ok
-  def report_failure(server, task, error) do
-    Logger.debug("DTask.Task.Dispatcher.report_failure(#{inspect(server)}, #{inspect(task)}, #{inspect(error)})")
-    GenServer.cast(server, {:failure, task, error})
+  @spec report_finished(server, task, Task.outcome) :: :ok
+  def report_finished(server, task, outcome) do
+    Logger.debug("DTask.Task.Dispatcher.report_finished(#{inspect(server)}, #{inspect(task)}, #{inspect(outcome)})")
+    GenServer.cast(server, {:finished, task, outcome})
   end
 
   # # # Callbacks # # #
@@ -248,15 +242,12 @@ defmodule DTask.Task.Dispatcher do
   end
 
   @impl true
-  def handle_cast({:success, task, result}, state) do
-    Logger.debug("DTask.Task.Dispatcher.handle_cast {:success, #{inspect(task)}, #{inspect(result)}}")
-    task_finished(state, task, {:success, result})
-  end
-
-  @impl true
-  def handle_cast({:failure, task, error}, state) do
-    Logger.debug("DTask.Task.Dispatcher.handle_cast {:failure, #{inspect(task)}, #{inspect(error)}}")
-    task_finished(state, task, {:failure, error})
+  def handle_cast({:finished, task, outcome}, state) do
+    Logger.info("Finished task #{inspect(task)} with outcome #{inspect(outcome)}")
+    {node, new_state0} = task_finished_upd(state, task, outcome)
+    new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
+                           |> update_in([:executors, :idle], &[node | &1])
+    {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
   # Private functions
@@ -269,14 +260,6 @@ defmodule DTask.Task.Dispatcher do
     server = {DTask.Task.Executor, node}
     Logger.info("Dispatching on node #{inspect(server)} task #{inspect(task)} with parameters: #{inspect(params)}")
     Executor.exec_task(server, task, params)
-  end
-
-  defp task_finished(state, task, outcome) do
-    Logger.info("Finished task #{inspect(task)} with outcome #{inspect(outcome)}")
-    {node, new_state0} = task_finished_upd(state, task, outcome)
-    new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
-                           |> update_in([:executors, :idle], &[node | &1])
-    {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
   defp task_finished_upd(state, task, outcome) do
