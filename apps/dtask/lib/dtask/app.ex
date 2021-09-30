@@ -8,7 +8,6 @@ defmodule DTask.App do
     case ensure_node_alive(cfg, node_prefix_key) do
       {:ok, node}     -> node
       {:error, error} -> raise error
-      other           -> raise other
     end
   end
 
