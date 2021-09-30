@@ -5,7 +5,7 @@ defmodule DTaskUmbrella.MixProject do
     [
       app: :dtask_umbrella,
       apps_path: "apps",
-      version: "0.1.3",
+      version: "0.2.0",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
