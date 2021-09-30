@@ -18,8 +18,19 @@ defmodule DTask.Task.Dispatcher do
   }
 
   @type task :: {Task.t, Task.params}
-  @typep task_running :: {task, %{node: node, progress: term}}
-  @typep task_finished :: {task, {:success | :failure, term}}
+  @typep task_running  :: {task, %{
+                                   node: node,
+                                   progress: term,
+                                   dispatched: DateTime
+                                 }
+                          }
+  @typep task_finished :: {task, %{
+                                   node: node,
+                                   outcome: {:success, term} | {:failure, term},
+                                   dispatched: DateTime,
+                                   finished: DateTime
+                                 }
+                          }
   @type tasks_state :: %{
                          pending: [task],
                          running: [task_running],
@@ -170,10 +181,14 @@ defmodule DTask.Task.Dispatcher do
         end
       {[next | pending], [node | idle]} ->
         dispatch_task(next, node)
-        running = {next, %{progress: :dispatched, node: node}}
+        running = %{
+          progress: :dispatched,
+          node: node,
+          dispatched: DateTime.utc_now()
+        }
         new_state = state |> put_in([:tasks, :pending], pending)
                           |> put_in([:executors, :idle], idle)
-                          |> update_in([:tasks, :running], &[running | &1])
+                          |> update_in([:tasks, :running], &[{next, running} | &1])
                           |> update_in([:executors, :busy], &[node | &1])
                           |> Map.put(:finished?, false)
         {:noreply, new_state}
@@ -265,9 +280,15 @@ defmodule DTask.Task.Dispatcher do
   end
 
   defp task_finished_upd(state, task, outcome) do
-    {{_, running}, new_state} =
-      state |> update_in([:tasks, :finished], &[{task, outcome} | &1])
-            |> get_and_update_in([:tasks, :running], &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
+    {{_, running}, new_state0} =
+      get_and_update_in(state.tasks.running, &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
+    finished = %{
+      node: running.node,
+      outcome: outcome,
+      dispatched: running.dispatched,
+      finished: DateTime.utc_now()
+    }
+    new_state = update_in(new_state0.tasks.finished, &[{task, finished} | &1])
     {running.node, new_state}
   end
 
