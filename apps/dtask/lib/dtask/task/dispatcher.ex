@@ -81,9 +81,9 @@ defmodule DTask.Task.Dispatcher do
 
   # Commands
 
-  @spec add_task(server, task_descriptor) :: :ok
-  def add_task(server \\ __MODULE__, task) do
-    GenServer.cast(server, {:add_tasks, [task]})
+  @spec add_task(server, Task.t, Task.params) :: :ok
+  def add_task(server \\ __MODULE__, task, params) do
+    GenServer.cast(server, {:add_tasks, [{task, params}]})
   end
 
   @spec add_tasks(server, [task_descriptor, ...]) :: :ok
@@ -306,8 +306,8 @@ defmodule DTask.Task.Dispatcher.CLI do
       alias DTask.Task.Dispatcher
 
       # Commands
-      defdelegate add_task(task),   to: Dispatcher
-      defdelegate add_tasks(tasks), to: Dispatcher
+      defdelegate add_task(task, params), to: Dispatcher
+      defdelegate add_tasks(tasks),       to: Dispatcher
 
       # Queries
       defdelegate executors(), to: Dispatcher, as: :get_executors
