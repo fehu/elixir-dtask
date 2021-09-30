@@ -175,6 +175,7 @@ defmodule DTask.Task.Dispatcher do
                           |> put_in([:executors, :idle], idle)
                           |> update_in([:tasks, :running], &[running | &1])
                           |> update_in([:executors, :busy], &[node | &1])
+                          |> Map.put(:finished?, false)
         {:noreply, new_state}
       {_, []} ->
         {:noreply, state}
