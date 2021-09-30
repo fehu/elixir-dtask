@@ -4,7 +4,7 @@ defmodule DTask.MixProject do
   def project do
     [
       app: :dtask,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.12",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
