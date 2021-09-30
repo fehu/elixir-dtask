@@ -19,7 +19,7 @@ defmodule DTask.App.Controller do
                     ctrl_node_prefix: String.t,
                     exec_node_prefix: String.t,
                     resource_report_timeout_millis: non_neg_integer,
-                    tasks: [Dispatcher.task, ...]
+                    tasks: [Dispatcher.task_descriptor, ...]
                   }
 
   @impl true

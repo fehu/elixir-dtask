@@ -11,8 +11,7 @@ defmodule DTask.Task.Reporter.Builder do
 
   @type t :: module
 
-  alias DTask.Task
   alias DTask.Task.{Dispatcher, Reporter}
 
-  @callback new(Dispatcher.server, Task.t, Task.params) :: Reporter.t
+  @callback new(Dispatcher.server, Dispatcher.task_id) :: Reporter.t
 end

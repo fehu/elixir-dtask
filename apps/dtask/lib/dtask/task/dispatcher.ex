@@ -17,27 +17,31 @@ defmodule DTask.Task.Dispatcher do
     busy: [node]
   }
 
-  @type task :: {Task.t, Task.params}
-  @typep task_running  :: {task, %{
-                                   node: node,
-                                   progress: term,
-                                   dispatched: DateTime
-                                 }
+  @type task_descriptor :: {Task.t, Task.params}
+  @type task_id :: non_neg_integer
+
+  @typep task_running  :: {task_id, %{
+                                      node: node,
+                                      descriptor: task_descriptor,
+                                      progress: term,
+                                      dispatched: DateTime
+                                    }
                           }
-  @typep task_finished :: {task, %{
-                                   node: node,
-                                   outcome: {:success, term} | {:failure, term},
-                                   dispatched: DateTime,
-                                   finished: DateTime
-                                 }
+  @typep task_finished :: {task_id, %{
+                                      node: node,
+                                      descriptor: task_descriptor,
+                                      outcome: {:success, term} | {:failure, term},
+                                      dispatched: DateTime,
+                                      finished: DateTime
+                                    }
                           }
   @type tasks_state :: %{
-                         pending: [task],
+                         pending: [task_descriptor],
                          running: [task_running],
                          finished: [task_finished]
                        }
 
-  @spec start_link(String.t, [task, ...]) :: GenServer.on_start
+  @spec start_link(String.t, [task_descriptor, ...]) :: GenServer.on_start
   def start_link(exec_node_prefix, tasks) do
     Logger.debug("DTask.Task.Dispatcher.start_link(#{exec_node_prefix}, #{inspect(tasks)})")
     GenServer.start_link(__MODULE__, {exec_node_prefix, tasks}, name: __MODULE__)
@@ -60,7 +64,7 @@ defmodule DTask.Task.Dispatcher do
     GenServer.call(server, :tasks)
   end
 
-  @spec get_pending(server) :: [task]
+  @spec get_pending(server) :: [task_descriptor]
   def get_pending(server \\ __MODULE__) do
     GenServer.call(server, :pending)
   end
@@ -77,28 +81,28 @@ defmodule DTask.Task.Dispatcher do
 
   # Commands
 
-  @spec add_task(server, task) :: :ok
+  @spec add_task(server, task_descriptor) :: :ok
   def add_task(server \\ __MODULE__, task) do
     GenServer.cast(server, {:add_tasks, [task]})
   end
 
-  @spec add_tasks(server, [task, ...]) :: :ok
+  @spec add_tasks(server, [task_descriptor, ...]) :: :ok
   def add_tasks(server \\ __MODULE__, tasks) do
     GenServer.cast(server, {:add_tasks, tasks})
   end
 
   # Execution notifications (used by `DTask.Task.Executor`)
 
-  @spec report_progress(server, task, term) :: :ok
-  def report_progress(server, task, progress) do
-    Logger.debug("DTask.Task.Dispatcher.report_progress(#{inspect(server)}, #{inspect(task)}, #{inspect(progress)})")
-    GenServer.cast(server, {:progress, task, progress})
+  @spec report_progress(server, task_id, term) :: :ok
+  def report_progress(server, task_id, progress) do
+    Logger.debug("DTask.Task.Dispatcher.report_progress(#{inspect(server)}, #{task_id}, #{inspect(progress)})")
+    GenServer.cast(server, {:progress, task_id, progress})
   end
 
-  @spec report_finished(server, task, Task.outcome) :: :ok
-  def report_finished(server, task, outcome) do
-    Logger.debug("DTask.Task.Dispatcher.report_finished(#{inspect(server)}, #{inspect(task)}, #{inspect(outcome)})")
-    GenServer.cast(server, {:finished, task, outcome})
+  @spec report_finished(server, task_id, Task.outcome) :: :ok
+  def report_finished(server, task_id, outcome) do
+    Logger.debug("DTask.Task.Dispatcher.report_finished(#{inspect(server)}, #{task_id}, #{inspect(outcome)})")
+    GenServer.cast(server, {:finished, task_id, outcome})
   end
 
   # # # Callbacks # # #
@@ -174,15 +178,17 @@ defmodule DTask.Task.Dispatcher do
           {:noreply, state}
         end
       {[next | pending], [node | idle]} ->
-        dispatch_task(next, node)
+        # Dispatch `next` task on idle `node` executor
+        task_id = dispatch_task(next, node)
         running = %{
           progress: :dispatched,
           node: node,
+          descriptor: next,
           dispatched: DateTime.utc_now()
         }
         new_state = state |> put_in([:tasks, :pending], pending)
                           |> put_in([:executors, :idle], idle)
-                          |> update_in([:tasks, :running], &[{next, running} | &1])
+                          |> update_in([:tasks, :running], &[{task_id, running} | &1])
                           |> update_in([:executors, :busy], &[node | &1])
                           |> Map.put(:finished?, false)
         {:noreply, new_state}
@@ -234,17 +240,19 @@ defmodule DTask.Task.Dispatcher do
   # Execution callbacks (used by `DTask.Task.Executor`)
 
   @impl true
-  def handle_cast({:progress, task, progress}, state) do
-    Logger.debug("DTask.Task.Dispatcher.handle_cast {:progress, #{inspect(task)}, #{inspect(progress)}}")
-    new_state = update_in state.tasks.running,
-                          &keyupdate(&1, task, 0, fn {_, m} -> {task, %{m | :progress => progress}} end)
+  def handle_cast({:progress, task_id, progress}, state) do
+    Logger.debug("DTask.Task.Dispatcher.handle_cast {:progress, #{task_id}, #{inspect(progress)}}")
+    new_state = update_in(
+      state.tasks.running,
+      &keyupdate(&1, task_id, 0, fn {_, m} -> {task_id, %{m | :progress => progress}} end)
+    )
     {:noreply, new_state}
   end
 
   @impl true
-  def handle_cast({:finished, task, outcome}, state) do
-    Logger.info("Finished task #{inspect(task)} with outcome #{inspect(outcome)}")
-    {node, new_state0} = task_finished_upd(state, task, outcome)
+  def handle_cast({:finished, task_id, outcome}, state) do
+    Logger.info("Finished task [#{task_id}] with outcome #{inspect(outcome)}")
+    {node, new_state0} = task_finished_upd(state, task_id, outcome)
     new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
                            |> update_in([:executors, :idle], &[node | &1])
     {:noreply, new_state, {:continue, :dispatch_next}}
@@ -256,22 +264,29 @@ defmodule DTask.Task.Dispatcher do
     String.starts_with?(Atom.to_string(node), exec_node_prefix <> "@")
   end
 
+  @spec dispatch_task(task_descriptor, node) :: task_id
   defp dispatch_task({task, params}, node) do
     server = {DTask.Task.Executor, node}
-    Logger.info("Dispatching on node #{inspect(server)} task #{inspect(task)} with parameters: #{inspect(params)}")
-    Executor.exec_task(server, task, params)
+    task_id = rand16()
+    Logger.info("Dispatching on node #{inspect(server)}" <>
+                " task [#{task_id}] #{inspect(task)} with parameters: #{inspect(params)}")
+    Executor.exec_task(server, task, params, task_id)
+    task_id
   end
 
-  defp task_finished_upd(state, task, outcome) do
-    {{_, running}, new_state0} =
-      get_and_update_in(state.tasks.running, &{List.keyfind(&1, task, 0), List.keydelete(&1, task, 0)})
+  defp task_finished_upd(state, task_id, outcome) do
+    {{_, running}, new_state0} = get_and_update_in(
+      state.tasks.running,
+      &{List.keyfind(&1, task_id, 0), List.keydelete(&1, task_id, 0)}
+    )
     finished = %{
       node: running.node,
+      descriptor: running.descriptor,
       outcome: outcome,
       dispatched: running.dispatched,
       finished: DateTime.utc_now()
     }
-    new_state = update_in(new_state0.tasks.finished, &[{task, finished} | &1])
+    new_state = update_in(new_state0.tasks.finished, &[{task_id, finished} | &1])
     {running.node, new_state}
   end
 
@@ -280,6 +295,9 @@ defmodule DTask.Task.Dispatcher do
     found = List.keyfind(list, key, position)
     List.keyreplace(list, key, position, update.(found))
   end
+
+  @pow_16 Integer.pow(2, 16)
+  defp rand16, do: :rand.uniform(@pow_16) - 1
 end
 
 defmodule DTask.Task.Dispatcher.CLI do

@@ -14,10 +14,10 @@ defmodule DTask.Task.Executor do
   end
 
   # TODO: use `call` to ensure task was accepted for execution
-  @spec exec_task(GenServer.server, Task.t, Task.params) :: :ok
-  def exec_task(server, task, params) do
+  @spec exec_task(GenServer.server, Task.t, Task.params, Dispatcher.task_id) :: :ok
+  def exec_task(server, task, params, task_id) do
     Logger.debug("DTask.Task.Executor.exec_task(#{inspect(server)}, #{inspect(task)}, #{inspect(params)})")
-    GenServer.cast(server, {:exec, task, params})
+    GenServer.cast(server, {:exec, task, params, task_id})
   end
 
   # # # Callbacks # # #
@@ -28,12 +28,12 @@ defmodule DTask.Task.Executor do
   end
 
   @impl true
-  def handle_cast({:exec, task, params}, cfg={dispatcher, reporter_builder}) do
-    Logger.info("Executing task #{inspect(task)} with parameters #{inspect(params)}")
-    reporter = reporter_builder.new(dispatcher, task, params)
+  def handle_cast({:exec, task, params, task_id}, cfg={dispatcher, reporter_builder}) do
+    Logger.info("Executing task [#{task_id}] #{inspect(task)} with parameters #{inspect(params)}")
+    reporter = reporter_builder.new(dispatcher, task_id)
     # Execute the task
     outcome = task.exec(reporter, params)
-    Dispatcher.report_finished(dispatcher, {task, params}, outcome)
+    Dispatcher.report_finished(dispatcher, task_id, outcome)
     {:noreply, cfg}
   end
 end
