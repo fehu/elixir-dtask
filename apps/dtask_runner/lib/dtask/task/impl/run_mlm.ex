@@ -85,7 +85,7 @@ defmodule DTask.Task.Impl.RunMLM do
         {:progress, progress=%{label: ""}} when state.stage in [:training, :evaluating] ->
           Logger.debug("Report progress")
           Reporter.progress(reporter, %{progress | :label => state.stage})
-          state
+          %{state | :capture => nil}
 
         {:error, error} ->
           Logger.error(error)
