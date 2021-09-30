@@ -41,6 +41,14 @@ defmodule DTask.Task.Dispatcher do
                          finished: [task_finished]
                        }
 
+  @typep state :: %{
+                    finished?: boolean,
+                    tasks: tasks_state,
+                    executors: executors_state,
+                    exec_node_prefix: String.t,
+                    last_task_id: non_neg_integer
+                  }
+
   @spec start_link(String.t, [task_descriptor, ...]) :: GenServer.on_start
   def start_link(exec_node_prefix, tasks) do
     Logger.debug("DTask.Task.Dispatcher.start_link(#{exec_node_prefix}, #{inspect(tasks)})")
@@ -122,7 +130,8 @@ defmodule DTask.Task.Dispatcher do
         idle: executors,
         busy: []
       },
-      exec_node_prefix: exec_node_prefix
+      exec_node_prefix: exec_node_prefix,
+      last_task_id: 0
     }
 
     # Monitor :nodeup/:nodedown events
@@ -178,19 +187,20 @@ defmodule DTask.Task.Dispatcher do
           {:noreply, state}
         end
       {[next | pending], [node | idle]} ->
+        {task_id, new_state_0} = next_task_id(state)
         # Dispatch `next` task on idle `node` executor
-        task_id = dispatch_task(next, node)
+        dispatch_task(next, node, task_id)
         running = %{
           progress: :dispatched,
           node: node,
           descriptor: next,
           dispatched: DateTime.utc_now()
         }
-        new_state = state |> put_in([:tasks, :pending], pending)
-                          |> put_in([:executors, :idle], idle)
-                          |> update_in([:tasks, :running], &[{task_id, running} | &1])
-                          |> update_in([:executors, :busy], &[node | &1])
-                          |> Map.put(:finished?, false)
+        new_state = new_state_0 |> put_in([:tasks, :pending], pending)
+                                |> put_in([:executors, :idle], idle)
+                                |> update_in([:tasks, :running], &[{task_id, running} | &1])
+                                |> update_in([:executors, :busy], &[node | &1])
+                                |> Map.put(:finished?, false)
         {:noreply, new_state}
       {_, []} ->
         {:noreply, state}
@@ -264,16 +274,15 @@ defmodule DTask.Task.Dispatcher do
     String.starts_with?(Atom.to_string(node), exec_node_prefix <> "@")
   end
 
-  @spec dispatch_task(task_descriptor, node) :: task_id
-  defp dispatch_task({task, params}, node) do
+  @spec dispatch_task(task_descriptor, node, task_id) :: :ok
+  defp dispatch_task({task, params}, node, task_id) do
     server = {DTask.Task.Executor, node}
-    task_id = rand16()
     Logger.info("Dispatching on node #{inspect(server)}" <>
                 " task [#{task_id}] #{inspect(task)} with parameters: #{inspect(params)}")
     Executor.exec_task(server, task, params, task_id)
-    task_id
   end
 
+  @spec task_finished_upd(state, task_id, Task.outcome) :: {node, state}
   defp task_finished_upd(state, task_id, outcome) do
     {{_, running}, new_state0} = get_and_update_in(
       state.tasks.running,
@@ -296,8 +305,11 @@ defmodule DTask.Task.Dispatcher do
     List.keyreplace(list, key, position, update.(found))
   end
 
-  @pow_16 Integer.pow(2, 16)
-  defp rand16, do: :rand.uniform(@pow_16) - 1
+  @spec next_task_id(state) :: {pos_integer, state}
+  defp next_task_id(state) do
+    Map.get_and_update(state, :last_task_id, &Tuple.duplicate(&1 + 1, 2))
+  end
+
 end
 
 defmodule DTask.Task.Dispatcher.CLI do
