@@ -17,7 +17,6 @@ defmodule Def do
     {RunMLM, %{
       dir: @script_dir,
       script: @script_file,
-      sh_opts: [max_line_length: 16_384], # 1024 * 16
       mlm_params: params
     }}
   end
