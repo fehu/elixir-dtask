@@ -20,6 +20,7 @@ defmodule DTask.Task.Dispatcher do
   @type task_descriptor :: {Task.t, Task.params}
   @type task_id :: non_neg_integer
 
+  @typep task_pending  :: {task_descriptor, task_id}
   @typep task_running  :: {task_id, %{
                                       node: node,
                                       descriptor: task_descriptor,
@@ -36,7 +37,7 @@ defmodule DTask.Task.Dispatcher do
                                     }
                           }
   @type tasks_state :: %{
-                         pending: [task_descriptor],
+                         pending: [task_pending],
                          running: [task_running],
                          finished: [task_finished]
                        }
@@ -46,7 +47,7 @@ defmodule DTask.Task.Dispatcher do
                     tasks: tasks_state,
                     executors: executors_state,
                     exec_node_prefix: String.t,
-                    last_task_id: non_neg_integer
+                    next_task_id: non_neg_integer
                   }
 
   @spec start_link(String.t, [task_descriptor, ...]) :: GenServer.on_start
@@ -122,7 +123,7 @@ defmodule DTask.Task.Dispatcher do
     state = %{
       finished?: false,
       tasks: %{
-        pending: tasks,
+        pending: Enum.with_index(tasks),
         running: [],
         finished: []
       },
@@ -131,7 +132,7 @@ defmodule DTask.Task.Dispatcher do
         busy: []
       },
       exec_node_prefix: exec_node_prefix,
-      last_task_id: 0
+      next_task_id: length(tasks)
     }
 
     # Monitor :nodeup/:nodedown events
@@ -186,21 +187,20 @@ defmodule DTask.Task.Dispatcher do
         else
           {:noreply, state}
         end
-      {[next | pending], [node | idle]} ->
-        {task_id, new_state_0} = next_task_id(state)
-        # Dispatch `next` task on idle `node` executor
-        dispatch_task(next, node, task_id)
+      {[{task, task_id} | pending], [node | idle]} ->
+        # Dispatch next `task` on idle `node` executor
+        dispatch_task(task, node, task_id)
         running = %{
           progress: :dispatched,
           node: node,
-          descriptor: next,
+          descriptor: task,
           dispatched: DateTime.utc_now()
         }
-        new_state = new_state_0 |> put_in([:tasks, :pending], pending)
-                                |> put_in([:executors, :idle], idle)
-                                |> update_in([:tasks, :running], &[{task_id, running} | &1])
-                                |> update_in([:executors, :busy], &[node | &1])
-                                |> Map.put(:finished?, false)
+        new_state = state |> put_in([:tasks, :pending], pending)
+                          |> put_in([:executors, :idle], idle)
+                          |> update_in([:tasks, :running], &[{task_id, running} | &1])
+                          |> update_in([:executors, :busy], &[node | &1])
+                          |> Map.put(:finished?, false)
         {:noreply, new_state}
       {_, []} ->
         {:noreply, state}
@@ -243,7 +243,11 @@ defmodule DTask.Task.Dispatcher do
 
   @impl true
   def handle_cast({:add_tasks, tasks}, state) do
-    new_state = update_in(state.tasks.pending, &Enum.concat(&1, tasks))
+    {next_id, new_state0} = Map.get_and_update(state, :next_task_id, &{&1, &1 + length(tasks)})
+    new_tasks = Stream.with_index(tasks)
+             |> Stream.map(fn {task, i} -> {task, next_id + i} end)
+             |> Enum.to_list
+    new_state = update_in(new_state0.tasks.pending, &Enum.concat(&1, new_tasks))
     {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
@@ -303,11 +307,6 @@ defmodule DTask.Task.Dispatcher do
   defp keyupdate(list, key, position, update) do
     found = List.keyfind(list, key, position)
     List.keyreplace(list, key, position, update.(found))
-  end
-
-  @spec next_task_id(state) :: {pos_integer, state}
-  defp next_task_id(state) do
-    Map.get_and_update(state, :last_task_id, &Tuple.duplicate(&1 + 1, 2))
   end
 
 end
