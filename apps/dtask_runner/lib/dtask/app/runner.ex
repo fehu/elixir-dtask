@@ -37,7 +37,7 @@ defmodule DTask.App.Runner do
         id: Task.Executor,
         start: {Task.Executor, :start_link, [
           {Task.Dispatcher, cfg.master_node},
-          Task.Reporter.DispatcherReporter.Builder
+          Task.Reporter.MonitorBroadcastReporter.Builder
         ]}
       },
       %{

@@ -1,11 +1,11 @@
 defmodule DTask.Task.Dispatcher do
   @moduledoc """
   Dispatches Tasks to available Executors.
-  Keeps track of Task execution state (progress & result).
+  Keeps results / errors (in memory).
   """
 
   alias DTask.Task
-  alias DTask.Task.Executor
+  alias DTask.Task.{Executor, Monitor}
 
   use GenServer
   require Logger
@@ -20,11 +20,10 @@ defmodule DTask.Task.Dispatcher do
   @type task_descriptor :: {Task.t, Task.params}
   @type task_id :: non_neg_integer
 
-  @typep task_pending  :: {task_descriptor, task_id}
+  @type  task_pending  :: {task_descriptor, task_id}
   @typep task_running  :: {task_id, %{
                                       node: node,
                                       descriptor: task_descriptor,
-                                      progress: term,
                                       dispatched: DateTime
                                     }
                           }
@@ -101,12 +100,6 @@ defmodule DTask.Task.Dispatcher do
   end
 
   # Execution notifications (used by `DTask.Task.Executor`)
-
-  @spec report_progress(server, task_id, term) :: :ok
-  def report_progress(server, task_id, progress) do
-    Logger.debug("DTask.Task.Dispatcher.report_progress(#{inspect(server)}, #{task_id}, #{inspect(progress)})")
-    GenServer.cast(server, {:progress, task_id, progress})
-  end
 
   @spec report_finished(server, task_id, Task.outcome) :: :ok
   def report_finished(server, task_id, outcome) do
@@ -189,12 +182,11 @@ defmodule DTask.Task.Dispatcher do
         end
       {[{task, task_id} | pending], [node | idle]} ->
         # Dispatch next `task` on idle `node` executor
-        dispatch_task(task, node, task_id)
+        timestamp = dispatch_task(task, node, task_id)
         running = %{
-          progress: :dispatched,
           node: node,
           descriptor: task,
-          dispatched: DateTime.utc_now()
+          dispatched: timestamp
         }
         new_state = state |> put_in([:tasks, :pending], pending)
                           |> put_in([:executors, :idle], idle)
@@ -247,21 +239,15 @@ defmodule DTask.Task.Dispatcher do
     new_tasks = Stream.with_index(tasks)
              |> Stream.map(fn {task, i} -> {task, next_id + i} end)
              |> Enum.to_list
+
+    # Notify monitors
+    Enum.each(new_tasks, &Monitor.Broadcast.registered/1)
+
     new_state = update_in(new_state0.tasks.pending, &Enum.concat(&1, new_tasks))
     {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
   # Execution callbacks (used by `DTask.Task.Executor`)
-
-  @impl true
-  def handle_cast({:progress, task_id, progress}, state) do
-    Logger.debug("DTask.Task.Dispatcher.handle_cast {:progress, #{task_id}, #{inspect(progress)}}")
-    new_state = update_in(
-      state.tasks.running,
-      &keyupdate(&1, task_id, 0, fn {_, m} -> {task_id, %{m | :progress => progress}} end)
-    )
-    {:noreply, new_state}
-  end
 
   @impl true
   def handle_cast({:finished, task_id, outcome}, state) do
@@ -278,12 +264,18 @@ defmodule DTask.Task.Dispatcher do
     String.starts_with?(Atom.to_string(node), exec_node_prefix <> "@")
   end
 
-  @spec dispatch_task(task_descriptor, node, task_id) :: :ok
+  @spec dispatch_task(task_descriptor, node, task_id) :: DateTime.t
   defp dispatch_task({task, params}, node, task_id) do
-    server = {DTask.Task.Executor, node}
-    Logger.info("Dispatching on node #{inspect(server)}" <>
+    Logger.info("Dispatching on node #{node}" <>
                 " task [#{task_id}] #{inspect(task)} with parameters: #{inspect(params)}")
-    Executor.exec_task(server, task, params, task_id)
+
+    # Send task to executor
+    Executor.exec_task({Executor, node}, task, params, task_id)
+
+    # Notify monitors
+    timestamp = DateTime.utc_now()
+    Monitor.Broadcast.dispatched(task_id, timestamp, node)
+    timestamp
   end
 
   @spec task_finished_upd(state, task_id, Task.outcome) :: {node, state}
@@ -292,21 +284,20 @@ defmodule DTask.Task.Dispatcher do
       state.tasks.running,
       &{List.keyfind(&1, task_id, 0), List.keydelete(&1, task_id, 0)}
     )
+
+    # Notify monitors
+    timestamp = DateTime.utc_now()
+    Monitor.Broadcast.finished(task_id, timestamp, outcome)
+
     finished = %{
       node: running.node,
       descriptor: running.descriptor,
       outcome: outcome,
       dispatched: running.dispatched,
-      finished: DateTime.utc_now()
+      finished: timestamp
     }
     new_state = update_in(new_state0.tasks.finished, &[{task_id, finished} | &1])
     {running.node, new_state}
-  end
-
-  @spec keyupdate([tuple], any, non_neg_integer, (tuple -> tuple)) :: [tuple]
-  defp keyupdate(list, key, position, update) do
-    found = List.keyfind(list, key, position)
-    List.keyreplace(list, key, position, update.(found))
   end
 
 end
