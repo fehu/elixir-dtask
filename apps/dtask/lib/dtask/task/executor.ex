@@ -32,7 +32,13 @@ defmodule DTask.Task.Executor do
     Logger.info("Executing task [#{task_id}] #{inspect(task)} with parameters #{inspect(params)}")
     reporter = reporter_builder.new(dispatcher, task_id)
     # Execute the task
-    outcome = task.exec(reporter, params)
+    outcome =
+      try do
+        task.exec(reporter, params)
+      catch
+        :error, error -> {:failure, {:error, error, __STACKTRACE__}}
+        :exit, reason -> {:failure, {:exit, reason, __STACKTRACE__}}
+      end
     Dispatcher.report_finished(dispatcher, task_id, outcome)
     {:noreply, cfg}
   end

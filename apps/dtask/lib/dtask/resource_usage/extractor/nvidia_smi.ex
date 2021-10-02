@@ -3,11 +3,12 @@ defmodule DTask.ResourceUsage.Extractor.NvidiaSmi do
 
   @behaviour DTask.ResourceUsage.Extractor
 
-  # TODO: narrow `number`
-  @type usage :: %{gpu: number, mem: number}
+  @typep value :: number | :nan
+  @type usage :: %{gpu: value, mem: value}
 
   @typep ignored :: term
 
+  @impl true
   @spec query_usage(ignored) :: {:ok, usage} | {:error, term}
   def query_usage(_) do
     params = [
@@ -26,8 +27,8 @@ defmodule DTask.ResourceUsage.Extractor.NvidiaSmi do
 
   defp parse_usage(raw) do
     case String.trim(raw) do
-      "[N/A]" -> 0
-      num     -> String.to_integer(num) # TODO
+      "[N/A]" -> :nan
+      num     -> String.to_integer(num)
     end
   end
 
