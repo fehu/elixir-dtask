@@ -17,8 +17,12 @@ config :dtask_runner,
        master_node: :ctrl@opensuse,
        resource_report_interval: 1_000,
        resource_usage: %{
-         extractor: DTask.ResourceUsage.Extractor.NvidiaSmi,
-         params: nil
+         extractor: DTask.ResourceUsage.Extractor.Combined,
+         params: [
+           {DTask.ResourceUsage.Extractor.CpuInfo, :each},
+           {DTask.ResourceUsage.Extractor.MemInfo, nil},
+           {DTask.ResourceUsage.Extractor.NvidiaSmi, nil}
+         ]
        }
 
 config :logger,

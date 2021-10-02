@@ -3,11 +3,11 @@ defmodule DTask.ResourceUsage.Extractor.NvidiaSmi do
 
   @behaviour DTask.ResourceUsage.Extractor
 
-  # TODO: narrow `number`
   @type usage :: %{gpu: number, mem: number}
 
   @typep ignored :: term
 
+  @impl true
   @spec query_usage(ignored) :: {:ok, usage} | {:error, term}
   def query_usage(_) do
     params = [
