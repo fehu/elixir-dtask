@@ -3,7 +3,8 @@ defmodule DTask.ResourceUsage.Extractor.MemInfo do
 
   @behaviour DTask.ResourceUsage.Extractor
 
-  @type usage :: %{ram: number, swap: number}
+  @typep value :: number | :nan
+  @type usage :: %{ram: value, swap: value}
 
   @typep ignored :: term
 
@@ -27,7 +28,7 @@ defmodule DTask.ResourceUsage.Extractor.MemInfo do
          {swap_free, ""}   <- Integer.parse(s_swap_free)
       do {:ok, %{
            ram: 1 - mem_avail / mem_total,
-           swap: (if swap_total == 0, do: 0, else: 1 - swap_free / swap_total)
+           swap: (if swap_total == 0, do: :nan, else: 1 - swap_free / swap_total)
          }}
       else
         {:error, e} -> {:error, e}
