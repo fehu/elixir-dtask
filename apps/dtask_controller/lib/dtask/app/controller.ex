@@ -10,7 +10,6 @@ defmodule DTask.App.Controller do
   use Application
 
   alias DTask.App
-  alias DTask.ResourceUsage.Collector
   alias DTask.Task.Dispatcher
 
   @app_name :dtask_controller
@@ -33,10 +32,6 @@ defmodule DTask.App.Controller do
       %{
         id: Dispatcher,
         start: {Dispatcher, :start_link, [cfg.exec_node_prefix, cfg.tasks]}
-      },
-      %{
-        id: Collector,
-        start: {Collector, :start_link, [cfg.resource_report_timeout_millis]}
       }
     ]
     opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]
