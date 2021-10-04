@@ -2,13 +2,14 @@ defmodule DTask.TUI.State do
   @moduledoc false
 
   defmodule Connection do
-    @enforce_keys [:this_node, :this_node_up, :ctrl_node, :connected]
-    defstruct     [:this_node, :this_node_up, :ctrl_node, :connected]
+    @enforce_keys [:this_node, :this_node_up, :cookie, :ctrl_node, :connected]
+    defstruct     [:this_node, :this_node_up, :cookie, :ctrl_node, :connected]
 
     @type t :: %__MODULE__{
                  this_node: node,
                  this_node_up: boolean,
-                 ctrl_node: node,
+                 cookie: atom | nil,
+                 ctrl_node: node | nil,
                  connected: boolean
                }
   end

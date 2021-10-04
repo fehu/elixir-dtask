@@ -1,20 +1,29 @@
 import Config
 
-common = [
-  exec_node_prefix: "exec",
-  ctrl_node_prefix: "ctrl",
-  node_cookie: :wnxt6nu1ipeJfRagFcCTyQKc0x3uEhLD
-]
-config :dtask_controller, common
-config :dtask_runner, common
+cookie = :wnxt6nu1ipeJfRagFcCTyQKc0x3uEhLD
+cookie_cfg = [node_cookie: cookie]
 
+config :dtask_controller, cookie_cfg
+config :dtask_runner, cookie_cfg
+config :dtask_tui, cookie_cfg
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+ctrl_node_prefix = "ctrl"
+exec_node_prefix = "exec"
+tui_node_prefix  = "user"
+
+master_node = :ctrl@localhost
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 config :dtask_controller,
-       resource_report_timeout_millis: 1_500
+       ctrl_node_prefix: ctrl_node_prefix,
+       exec_node_prefix: exec_node_prefix
 
 config :dtask_runner,
-#       master_node: :"ctrl@127.0.0.1",
-       master_node: :ctrl@opensuse,
+       master_node: master_node,
+       exec_node_prefix: exec_node_prefix,
        resource_report_interval: 1_000,
        resource_usage: %{
          extractor: DTask.ResourceUsage.Extractor.Combined,
@@ -24,6 +33,13 @@ config :dtask_runner,
            {DTask.ResourceUsage.Extractor.NvidiaSmi, nil}
          ]
        }
+
+config :dtask_tui,
+       master_node: master_node,
+       tui_node_prefix: tui_node_prefix,
+       resource_report_timeout_millis: 1_500
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 config :logger,
        backends: [:console],

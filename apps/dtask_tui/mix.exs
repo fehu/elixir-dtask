@@ -19,7 +19,8 @@ defmodule DTask.App.Tui.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {DTask.App.Tui.Application, []}
+      mod: {DTask.App.TUI, []}
+           # :debug_no_tui
     ]
   end
 

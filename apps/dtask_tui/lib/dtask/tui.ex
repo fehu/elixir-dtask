@@ -16,6 +16,8 @@ defmodule DTask.TUI do
 
   @type msg :: term
 
+  @app_name :dtask_tui
+
   @default_tab :executors
   @default_show_help true
   @default_show_tabs true
@@ -28,26 +30,36 @@ defmodule DTask.TUI do
   @impl true
   @spec init(map()) :: state | {state, Command.t()}
   def init(context) do
-#    tasks = Task.Monitor.get_state
-#    resource_usage = ResourceUsage.Collector.get_usage
+    cfg = Enum.into(Application.get_all_env(@app_name), %{})
+
+    # State.Connection
+
+    ctrl_node = Map.get(cfg, :master_node)
+    connected = Node.ping(ctrl_node) == :pong
+
+    # State.UI
+
     layout = if context.window.width > @layout_wide_threshold,
                 do: @default_wide_layout,
                 else: @default_narrow_layout
+
+    # State
+
     %State{
-      # TODO =======================
       connection: %State.Connection{
-        this_node: :this@todo,
-        this_node_up: true,
-        ctrl_node: :ctrl@todo,
-        connected: false
+        this_node: Node.self(),
+        this_node_up: Node.alive?,
+        cookie: Map.get(cfg, :cookie),
+        ctrl_node: ctrl_node,
+        connected: connected
       },
       data: %State.Data{},
       ui: %State.UI{
         window: context.window,
         layout: layout,
         active_tab: @default_tab,
-        show_tabs: true,
-        show_help: true
+        show_tabs: @default_show_tabs,
+        show_help: @default_show_help
       }
     }
   end
