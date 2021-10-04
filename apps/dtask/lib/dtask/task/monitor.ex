@@ -1,9 +1,6 @@
 defmodule DTask.Task.Monitor do
   @moduledoc false
 
-  # Looks like it has no effect: warning about `@typep state/0` is still reported by mix.
-  @compile :nowarn_unused_type
-
   alias DTask.Task
   alias DTask.Task.Dispatcher
 
@@ -24,10 +21,10 @@ defmodule DTask.Task.Monitor do
   @typep task_state :: :pending
                      | {:running, task_running}
                      | {:finished, task_finished}
-  @typep state :: %{
-                    def_of: %{Dispatcher.task_id => Dispatcher.task_descriptor},
-                    state_of: %{Dispatcher.task_id => task_state}
-                  }
+  @type state :: %{
+                   def_of: %{Dispatcher.task_id => Dispatcher.task_descriptor},
+                   state_of: %{Dispatcher.task_id => task_state}
+                 }
 
   @spec start_link(Dispatcher.server) :: GenServer.on_start
   def start_link(dispatcher) do
