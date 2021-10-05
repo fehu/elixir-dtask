@@ -31,7 +31,8 @@ defmodule DTask.ResourceUsage.Collector do
   def handle_call(:get, _from, {cfg, usage}) do
     now = System.monotonic_time(1_000)
     response =
-      for {node, {report, time}} <- usage do
+      for {node, {report, time}} <- usage,
+          into: %{} do
         if now - time > cfg.dead_timeout,
           do: {node, :dead},
           else: {node, report}
