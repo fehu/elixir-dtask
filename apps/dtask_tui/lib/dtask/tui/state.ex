@@ -1,7 +1,25 @@
 defmodule DTask.TUI.State do
   @moduledoc false
 
+  use StructAccess
+
+  @enforce_keys [:connection, :data, :ui]
+  defstruct     [:connection, :data, :ui]
+
+  @type connection :: __MODULE__.Connection.t
+  @type data       :: __MODULE__.Data.t
+  @type ui         :: __MODULE__.UI.t
+
+  @type t :: %__MODULE__{
+               connection: connection,
+               data: data,
+               ui: ui
+             }
+  # # # # # # # # # # # # # # # # # # # #
+
   defmodule Connection do
+    use StructAccess
+
     @enforce_keys [:this_node, :this_node_up, :cookie, :ctrl_node, :connected]
     defstruct     [:this_node, :this_node_up, :cookie, :ctrl_node, :connected]
 
@@ -14,7 +32,11 @@ defmodule DTask.TUI.State do
                }
   end
 
+  # # # # # # # # # # # # # # # # # # # #
+
   defmodule Data do
+    use StructAccess
+
     defstruct [:tasks, :resource_usage]
 
     @type t :: %__MODULE__{
@@ -23,7 +45,11 @@ defmodule DTask.TUI.State do
                }
   end
 
+  # # # # # # # # # # # # # # # # # # # #
+
   defmodule UI do
+    use StructAccess
+
     @enforce_keys [:window, :layout, :active_tab, :show_tabs, :show_help]
     defstruct     [:window, :layout, :active_tab, :show_tabs, :show_help]
 
@@ -53,19 +79,4 @@ defmodule DTask.TUI.State do
                }
   end
 
-  # # # # # # # # # # # # # # # # # # # #
-
-  @enforce_keys [:connection, :data, :ui]
-  defstruct     [:connection, :data, :ui]
-
-  @type connection :: Connection.t
-  @type data       :: Data.t
-  @type ui         :: UI.t
-
-  @type t :: %__MODULE__{
-               connection: connection,
-               data: data,
-               ui: ui
-             }
-  # # # # # # # # # # # # # # # # # # # #
 end
