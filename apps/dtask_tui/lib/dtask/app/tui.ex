@@ -4,13 +4,16 @@ defmodule DTask.App.TUI do
   use Application
   require Logger
 
-  alias DTask.{ResourceUsage, Task}
+  alias DTask.{App, ResourceUsage, Task}
 
   @app_name :dtask_tui
 
   @impl true
   def start(_type, args) do
     cfg = Enum.into(Application.get_all_env(@app_name), %{})
+
+    # Try to start the node
+    App.ensure_node_alive(cfg, :tui_node_prefix)
 
     children_data = [
       %{
@@ -40,15 +43,17 @@ defmodule DTask.App.TUI do
 
     children = children_data ++ children_tui
 
-    # TODO: should it be done here?
+    # Start supervisor
+    opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]
+    supervisor = Supervisor.start_link(children, opts)
+
     # Try connect to master node
     case Node.connect(cfg.master_node) do
       true -> Logger.notice("Connected to master node #{cfg.master_node}")
       _    -> Logger.notice("Failed to connect to master node #{cfg.master_node}")
     end
 
-    opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]
-    Supervisor.start_link(children, opts)
+    supervisor
   end
 
 end
