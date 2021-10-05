@@ -11,18 +11,32 @@ defmodule DTask.ResourceUsage.Extractor.NvidiaSmi do
   @impl true
   @spec query_usage(ignored) :: {:ok, usage} | {:error, term}
   def query_usage(_) do
-    params = [
-      "--query-gpu=utilization.gpu,utilization.memory",
-      "--format=csv,noheader,nounits"
-    ]
-    with {csv, 0}   <- System.cmd("nvidia-smi", params),
+    with {:ok, csv} <- try_cmd(),
          [gpu, mem] <- String.split(csv, ",") |> Enum.map(&parse_usage/1),
          usage = %{gpu: gpu, mem: mem}
       do
         {:ok, usage}
       else
-        other -> {:error, other}
+        error={:error, _} -> error
+        other             -> {:error, other}
       end
+  end
+
+  @cmd "nvidia-smi"
+  @params [
+    "--query-gpu=utilization.gpu,utilization.memory",
+    "--format=csv,noheader,nounits"
+  ]
+
+  defp try_cmd do
+    try do
+      case System.cmd(@cmd, @params) do
+        {out, 0} -> {:ok, out}
+        {out, c} -> {:error, {:non_zero_exit, c, out}}
+      end
+    rescue
+      error -> {:error, error}
+    end
   end
 
   defp parse_usage(raw) do
