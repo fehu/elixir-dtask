@@ -12,12 +12,6 @@ defmodule DTask.ResourceUsage.Collector do
     GenServer.start_link(__MODULE__, dead_timeout_millis, name: __MODULE__)
   end
 
-  @spec report_usage(GenServer.server, term) :: :ok
-  def report_usage(server, usage) do
-    Logger.debug("DTask.ResourceUsage.Collector.report_usage(#{inspect(server)}, #{inspect(usage)})")
-    GenServer.cast(server, {:report, Node.self(), usage})
-  end
-
   @spec get_usage(GenServer.server) :: usage
   def get_usage(server \\ __MODULE__) do
     Logger.debug("DTask.ResourceUsage.Collector.get_usage(#{inspect(server)})")
@@ -50,6 +44,19 @@ defmodule DTask.ResourceUsage.Collector do
     now = System.monotonic_time(1_000)
     usage_upd = Map.put(usage, node, {report, now})
     {:noreply, {cfg, usage_upd}}
+  end
+
+  # # # Notifications # # #
+
+  defmodule Broadcast do
+    @collector DTask.ResourceUsage.Collector
+
+    @spec report_usage(term, node) :: :ok
+    def report_usage(usage, node \\ Node.self()) do
+      Logger.debug("DTask.ResourceUsage.Collector.Broadcast.report_usage(#{inspect(usage)}, #{inspect(node)})")
+      GenServer.abcast(@collector, {:report, node, usage})
+      :ok
+    end
   end
 
 end

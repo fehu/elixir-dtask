@@ -7,14 +7,13 @@ defmodule DTask.ResourceUsage.Reporter do
   require Logger
 
   @spec start_link(
-          collector :: GenServer.server,
           interval :: non_neg_integer,
           extractor :: Extractor.t,
           extractor_params :: Extractor.params
         ) :: GenServer.on_start
-  def start_link(collector, interval, extractor, extractor_params) do
+  def start_link(interval, extractor, extractor_params) do
     Logger.debug("DTask.ResourceUsage.Reporter.start_link")
-    init = {collector, interval, extractor, extractor_params}
+    init = {interval, extractor, extractor_params}
     GenServer.start_link(__MODULE__, init, name: __MODULE__)
   end
 
@@ -32,16 +31,16 @@ defmodule DTask.ResourceUsage.Reporter do
   # # # Callbacks # # #
 
   @impl GenServer
-  def init(state={_collector, interval, _extractor, _extractor_params}) do
+  def init(state={interval, _extractor, _extractor_params}) do
     schedule_report(interval)
     {:ok, state}
   end
 
   @impl GenServer
-  def handle_info(:report, state={collector, interval, extractor, extractor_params}) do
+  def handle_info(:report, state={interval, extractor, extractor_params}) do
     Logger.debug("DTask.ResourceUsage.Reporter.handle_info :report")
     with {:ok, usage} <- extractor.query_usage(extractor_params),
-         _ <- Collector.report_usage(collector, usage),
+         _ <- Collector.Broadcast.report_usage(usage),
          _ <- schedule_report(interval),
       do: {:noreply, state}
   end

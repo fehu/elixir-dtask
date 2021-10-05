@@ -43,7 +43,6 @@ defmodule DTask.App.Runner do
       %{
         id: ResourceUsage.Reporter,
         start: {ResourceUsage.Reporter, :start_link, [
-          {ResourceUsage.Collector, cfg.master_node},
           cfg.resource_report_interval,
           cfg.resource_usage.extractor,
           cfg.resource_usage.params
