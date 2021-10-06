@@ -3,7 +3,7 @@ defmodule DTask.TUI do
 
 
   alias DTask.TUI.Util.Render
-  alias DTask.TUI.Util.TableDetailsView
+  alias DTask.TUI.Util.MainView
   alias DTask.TUI.Util.TestPanel
   alias DTask.TUI.{State, Update, Views}
 
@@ -142,7 +142,7 @@ defmodule DTask.TUI do
   @impl true
   @spec render(state) :: Element.t
   def render(state) do
-    view = %TableDetailsView {
+    view = %MainView {
       top_bar: Views.TopBar.render(state),
       extra: Views.HelpPanel.render(state),
       table: Views.Executors.render_table(state),

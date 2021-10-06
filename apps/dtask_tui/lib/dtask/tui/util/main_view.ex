@@ -1,6 +1,6 @@
 alias DTask.TUI.Util.Render
 
-defmodule DTask.TUI.Util.TableDetailsView do
+defmodule DTask.TUI.Util.MainView do
   @moduledoc """
 
   ## [mode: :table_only]
@@ -113,14 +113,14 @@ defmodule DTask.TUI.Util.TableDetailsView do
              }
 end
 
-alias DTask.TUI.Util.TableDetailsView
+alias DTask.TUI.Util.MainView
 
-defimpl Render, for: TableDetailsView do
+defimpl Render, for: MainView do
   import Ratatouille.View
 
   @grid_size 12
 
-  @spec render(TableDetailsView.t, term, TableDetailsView.mode) :: Element.t
+  @spec render(MainView.t, term, MainView.mode) :: Element.t
   def render(t, model, mode) do
     view_opts = [
       top_bar: maybe_render(t.top_bar, model, nil),
@@ -170,7 +170,7 @@ defimpl Render, for: TableDetailsView do
     view(view_opts, extra ++ main)
   end
 
-  @spec maybe_render(TableDetailsView.component | nil, model :: term, opts :: term) :: Element.t | nil
+  @spec maybe_render(MainView.component | nil, model :: term, opts :: term) :: Element.t | nil
   defp maybe_render(t, _, _) when is_struct(t, Ratatouille.Renderer.Element),
        do: t
   defp maybe_render(nil, _, _),
