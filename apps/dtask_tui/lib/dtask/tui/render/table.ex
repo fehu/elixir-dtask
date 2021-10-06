@@ -42,7 +42,7 @@ defmodule DTask.TUI.Render.Table do
       def pre_render(state), do: nil
 
       @impl TUI.Render.Table
-      @const_table_height 3
+      @const_table_height 5
       @spec slice_data(TUI.state, term) :: [term]
       def slice_data(state, _cache) do
         case state.data[state.ui.table.data_key] do

@@ -15,8 +15,8 @@ defmodule DTask.TUI do
 
   @app_name :dtask_tui
 
-  @default_tab          :executors
-  @default_tab_data_key :resource_usage
+  @default_tab          :test
+  @default_tab_data_key Views.TestTable.data_key
 
   @default_show_help true
   @layout_wide_threshold 120
@@ -59,7 +59,9 @@ defmodule DTask.TUI do
         ctrl_node: ctrl_node,
         connected: connected
       },
-      data: %State.Data{},
+      data: %State.Data{
+        test: Enum.to_list(1..100)
+      },
       ui: %State.UI{
         window: context.window,
         layout: layout,

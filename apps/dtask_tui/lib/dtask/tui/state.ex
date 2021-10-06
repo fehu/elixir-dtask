@@ -37,14 +37,15 @@ defmodule DTask.TUI.State do
   defmodule Data do
     use StructAccess
 
-    defstruct [:tasks, :resource_usage]
+    defstruct [:test, :tasks, :resource_usage]
 
     @type tasks :: DTask.Task.Monitor.state | nil
     @type resource_usage :: DTask.ResourceUsage.Collector.usage | nil
 
     @type t :: %__MODULE__{
                  tasks: tasks,
-                 resource_usage: resource_usage
+                 resource_usage: resource_usage,
+                 test: [integer]
                }
   end
 
@@ -72,6 +73,7 @@ defmodule DTask.TUI.State do
                | :tasks_finished
                | :tasks_pending
                | :tasks_running
+               | :test
 
     @type table :: __MODULE__.Table.t
 

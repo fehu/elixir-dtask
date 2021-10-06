@@ -109,7 +109,8 @@ defmodule DTask.TUI.Views.MainView do
   @height_extra      Views.HelpPanel.height
 
   @render_main %{
-    executors: {Views.ExecutorsTable, Views.DetailsPanel}
+    executors: {Views.ExecutorsTable, Views.DetailsPanel},
+    test:      {Views.TestTable, Views.DetailsPanel}
   }
   @render_table   @render_main |> Enum.map(fn {k, {v, _}} -> {k, v} end)
   @render_details @render_main |> Enum.map(fn {k, {_, v}} -> {k, v} end)

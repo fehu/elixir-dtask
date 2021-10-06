@@ -28,7 +28,7 @@ defmodule DTask.TUI.Views.HelpPanel do
 
   @table_help "Table: [↑] / [↓] / [←] / [→] / [PageUp] / [PageDown] / [Home] / [End] / [Enter]"
 
-  @height 5
+  @height 6
 
   def height, do: @height
 

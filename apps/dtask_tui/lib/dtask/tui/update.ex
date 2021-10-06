@@ -41,7 +41,7 @@ defmodule DTask.TUI.Update do
     cursor = fn -> state.ui.table.cursor end
     {cond, upd_state} = case op do
       :+   -> {cursor.() < max - 1, fn -> update_in(state.ui.table.cursor, &(&1 + 1)) end}
-      :max -> {true,                fn -> put_in(state.ui.table.cursor, max) end}
+      :max -> {true,                fn -> put_in(state.ui.table.cursor, max - 1) end}
       i    -> {i <= max,            fn -> put_in(state.ui.table.cursor, i) end}
     end
     if cond, do: upd_state.(), else: state
