@@ -53,8 +53,8 @@ defmodule DTask.TUI.State do
   defmodule UI do
     use StructAccess
 
-    @enforce_keys [:window, :layout, :active_tab, :show_tabs, :show_help]
-    defstruct     [:window, :layout, :active_tab, :show_tabs, :show_help]
+    @enforce_keys [:window, :layout, :active_tab, :table, :show_tabs, :show_help]
+    defstruct     [:window, :layout, :active_tab, :table, :show_tabs, :show_help]
 
     @typep pos_int_2 :: {pos_integer, pos_integer}
 
@@ -63,8 +63,8 @@ defmodule DTask.TUI.State do
                       width: non_neg_integer
                     }
 
-    @type layout :: {:horizontal, heights :: pos_int_2}
-                  | {:vertical,   ratio :: pos_int_2}
+    @type layout :: {:split_horizontal, heights :: pos_int_2}
+                  | {:split_vertical,   ratio :: pos_int_2}
                   | :table_only
 
     @type tab :: :executors
@@ -73,13 +73,30 @@ defmodule DTask.TUI.State do
                | :tasks_pending
                | :tasks_running
 
+    @type table :: __MODULE__.Table.t
+
     @type t :: %__MODULE__{
                  window: window,
                  layout: layout,
                  active_tab: tab,
+                 table: table,
                  show_tabs: boolean,
                  show_help: boolean
                }
+
+    # # # # # # # # # # # # # # # # # # # #
+
+    defmodule Table do
+      use StructAccess
+
+      defstruct [:selected, offset_x: 0, offset_y: 0]
+
+      @type t :: %__MODULE__{
+                   selected: term | nil,
+                   offset_x: non_neg_integer,
+                   offset_y: non_neg_integer
+                 }
+    end
   end
 
 end

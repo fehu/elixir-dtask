@@ -43,6 +43,12 @@ defmodule DTask.TUI.Views.Executors do
 
   @spec render_table(TUI.state) :: Element.t
   def render_table(state) do
+    height = case state.ui.layout do
+      {:split_horizontal, {height, _}} -> height
+      _                                -> :fill
+    end
+    viewport_opts = Map.take(state.ui.table, [:offset_x, :offset_y])
+    selected = state.ui.table.selected
     data = state.data.resource_usage
     n_cpus =
       if data,
@@ -53,12 +59,12 @@ defmodule DTask.TUI.Views.Executors do
                   |> Stream.map(&Enum.count/1)
                   |> Enum.max(&>/2, fn -> 0 end),
          else: 0
-    panel(title: @table_title, height: :fill) do
-      # TODO
-      viewport() do
+
+    panel(title: @table_title, height: height) do
+      viewport(viewport_opts) do
         table do
           render_table_header(n_cpus)
-          if data, do: data |> Enum.map(&render_table_row(&1, n_cpus))
+          if data, do: data |> Enum.map(&render_table_row(&1, n_cpus, selected))
         end
       end
     end
@@ -75,9 +81,8 @@ defmodule DTask.TUI.Views.Executors do
     end
   end
 
-  defp render_table_row({node, :dead}, n_cpus) do
-    # TODO
-    selected? = false
+  defp render_table_row({node, :dead}, n_cpus, selected) do
+    selected? = node == selected
     table_row(if(selected?, do: @dead_row_selected_style, else: @dead_row_style)) do
       table_cell(content: to_string(node))
       for i <- 1 .. @table_columns_n_0 + n_cpus - 1 do
@@ -86,9 +91,8 @@ defmodule DTask.TUI.Views.Executors do
     end
   end
 
-  defp render_table_row({node, usage}, n_cpus) do
-    # TODO
-    selected? = false
+  defp render_table_row({node, usage}, n_cpus, selected) do
+    selected? = node == selected
     table_row(if(selected?, do: @row_selected_style, else: [])) do
       Enum.map @table_data_keys_0, fn
         :node -> table_cell(content: to_string(node))

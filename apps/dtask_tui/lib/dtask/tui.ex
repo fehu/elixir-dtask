@@ -58,6 +58,7 @@ defmodule DTask.TUI do
         window: context.window,
         layout: layout,
         active_tab: @default_tab,
+        table: %State.UI.Table{},
         show_tabs: @default_show_tabs,
         show_help: @default_show_help
       }
