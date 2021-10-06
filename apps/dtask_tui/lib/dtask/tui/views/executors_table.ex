@@ -1,10 +1,12 @@
-defmodule DTask.TUI.Views.Executors do
+defmodule DTask.TUI.Views.ExecutorsTable do
   @moduledoc false
 
   import DTask.Util.Syntax, only: [maybe: 2]
 
   alias Ratatouille.Constants
   import Ratatouille.View
+
+  @behaviour DTask.TUI.Render
 
   @data_key :resource_usage
 
@@ -60,8 +62,9 @@ defmodule DTask.TUI.Views.Executors do
          |> Enum.max(&>/2, fn -> 0 end)
   end
 
-  @spec render_table(TUI.state) :: Element.t
-  def render_table(state) do
+  @impl true
+  @spec render(TUI.state) :: Element.t
+  def render(state) do
     height = case state.ui.layout do
       {:split_horizontal, {height, _}} -> height
       _                                -> :fill

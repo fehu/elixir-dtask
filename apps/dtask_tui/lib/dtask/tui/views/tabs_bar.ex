@@ -4,6 +4,8 @@ defmodule DTask.TUI.Views.TabsBar do
   alias Ratatouille.Constants
   import Ratatouille.View
 
+  @behaviour DTask.TUI.Render
+
   @entries [
     {:separator,      " "},
     {:executors,      "[E]xecutors"},
@@ -21,6 +23,7 @@ defmodule DTask.TUI.Views.TabsBar do
 
   @active_style [attributes: [Constants.attribute(:bold)]]
 
+  @impl true
   @spec render(TUI.state) :: Element.t
   def render(state) do
     bar do

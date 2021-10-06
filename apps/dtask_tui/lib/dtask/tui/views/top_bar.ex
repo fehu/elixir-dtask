@@ -5,6 +5,8 @@ defmodule DTask.TUI.Views.TopBar do
 
   import Ratatouille.View
 
+  @behaviour DTask.TUI.Render
+
   @title " DTask: "
   @title_width 8
 
@@ -16,6 +18,7 @@ defmodule DTask.TUI.Views.TopBar do
 
   @static_width @title_width + @conn_arrow_width + @toggle_help_width
 
+  @impl true
   @spec render(TUI.state) :: Element.t
   def render(state) do
     this_node_str = Atom.to_string(state.connection.this_node)

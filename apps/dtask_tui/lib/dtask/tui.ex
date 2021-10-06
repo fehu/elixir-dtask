@@ -2,9 +2,7 @@ defmodule DTask.TUI do
   @moduledoc false
 
 
-  alias DTask.TUI.Util.Render
-  alias DTask.TUI.Util.MainView
-  alias DTask.TUI.Util.TestPanel
+  alias DTask.TUI.MainView
   alias DTask.TUI.{State, Update, Views}
 
   alias Ratatouille.Constants
@@ -21,7 +19,7 @@ defmodule DTask.TUI do
 
   @default_tab          :executors
   @default_tab_data_key :resource_usage
-  @default_tab_cnt_cols &Views.Executors.count_columns/1
+  @default_tab_cnt_cols &Views.ExecutorsTable.count_columns/1
 
   @default_show_help true
   @default_show_tabs true
@@ -141,18 +139,6 @@ defmodule DTask.TUI do
 
   @impl true
   @spec render(state) :: Element.t
-  def render(state) do
-    view = %MainView {
-      top_bar: Views.TopBar.render(state),
-      extra: Views.HelpPanel.render(state),
-      table: Views.Executors.render_table(state),
-      details: %TestPanel{title: "Details"},
-      bottom_bar: Views.TabsBar.render(state)
-    }
-#    mode = :table_only
-#    mode = {:split_vertical, {7, 5}}
-#    mode = {:split_horizontal, {20, :fill}}
-    Render.render(view, state, state.ui.layout)
-  end
+  defdelegate render(state), to: MainView
 
 end

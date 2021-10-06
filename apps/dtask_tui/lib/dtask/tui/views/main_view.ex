@@ -1,6 +1,4 @@
-alias DTask.TUI.Util.Render
-
-defmodule DTask.TUI.Util.MainView do
+defmodule DTask.TUI.MainView do
   @moduledoc """
 
   ## [mode: :table_only]
@@ -94,91 +92,72 @@ defmodule DTask.TUI.Util.MainView do
   ```
   """
 
-  @enforce_keys [:table, :details]
-  defstruct [:top_bar, :extra, :table, :details, :bottom_bar]
+  alias DTask.TUI
+  alias DTask.TUI.Views
 
-  @typep pos_int_2 :: {pos_integer, pos_integer}
-  @type mode :: :table_only
-              | {:split_horizontal, heights :: pos_int_2}
-              | {:split_vertical, ratio :: pos_int_2}
-
-  @type component :: Render.t | Ratatouille.Renderer.Element.t
-
-  @type t :: %__MODULE__{
-               top_bar:    component | nil,
-               extra:      component | nil,
-               table:      component,
-               details:    component,
-               bottom_bar: component | nil
-             }
-end
-
-alias DTask.TUI.Util.MainView
-
-defimpl Render, for: MainView do
   import Ratatouille.View
+
+  @behaviour DTask.TUI.Render
 
   @grid_size 12
 
-  @spec render(MainView.t, term, MainView.mode) :: Element.t
-  def render(t, model, mode) do
+  @render_top_bar    Views.TopBar
+  @render_bottom_bar Views.TabsBar
+  @render_extra      Views.HelpPanel
+
+  @render_main %{
+    executors: {Views.ExecutorsTable, Views.DetailsPanel}
+  }
+  @render_table   @render_main |> Enum.map(fn {k, {v, _}} -> {k, v} end)
+  @render_details @render_main |> Enum.map(fn {k, {_, v}} -> {k, v} end)
+
+  @impl true
+  @spec render(TUI.state) :: Element.t()
+  def render(state) do
     view_opts = [
-      top_bar: maybe_render(t.top_bar, model, nil),
-      bottom_bar: maybe_render(t.bottom_bar, model, nil)
+      top_bar: @render_top_bar.render(state),
+      bottom_bar: @render_bottom_bar.render(state)
     ]
-    extra = case maybe_render(t.extra, model, nil) do
-      nil -> []
-      e -> [
-        row do
-          column(size: @grid_size) do
-            e
-          end
-        end
-      ]
-    end
-    main = case mode do
+    extra = if state.ui.show_help,
+               do: [
+                 row do
+                   column(size: @grid_size) do
+                     @render_extra.render(state)
+                   end
+                 end
+               ],
+               else: []
+    main = case state.ui.layout do
       :table_only -> [
         row do
           column(size: @grid_size) do
-            maybe_render(t.table, model, nil)
+            @render_table[state.ui.active_tab].render(state)
           end
         end
       ]
-      {:split_horizontal, {height_top, height_bottom}} -> [
+      {:split_horizontal, _} -> [
         row do
           column(size: @grid_size) do
-            maybe_render(t.table, model, height: height_top)
+            @render_table[state.ui.active_tab].render(state)
           end
         end,
         row do
           column(size: @grid_size) do
-            maybe_render(t.details, model, height: height_bottom)
+            @render_details[state.ui.active_tab].render(state)
           end
         end
       ]
       {:split_vertical, {size_left, size_right}} -> [
         row do
           column size: size_left do
-            maybe_render(t.table, model, nil)
+            @render_table[state.ui.active_tab].render(state)
           end
           column size: size_right do
-            maybe_render(t.details, model, nil)
+            @render_details[state.ui.active_tab].render(state)
           end
         end
       ]
     end
     view(view_opts, extra ++ main)
-  end
-
-  @spec maybe_render(MainView.component | nil, model :: term, opts :: term) :: Element.t | nil
-  defp maybe_render(t, _, _) when is_struct(t, Ratatouille.Renderer.Element),
-       do: t
-  defp maybe_render(nil, _, _),
-       do: nil
-  defp maybe_render(t, model, opts) do
-    case Render.impl_for(t) do
-      nil  -> nil
-      impl -> impl.render(t, model, opts)
-    end
   end
 end

@@ -5,6 +5,8 @@ defmodule DTask.TUI.Views.HelpPanel do
 
   import Ratatouille.View
 
+  @behaviour DTask.TUI.Render
+
   @layouts [
     {:split_horizontal, "[H]orizontal"},
     {:split_vertical,   "[V]ertical"},
@@ -26,6 +28,11 @@ defmodule DTask.TUI.Views.HelpPanel do
 
   @table_help "Table: [↑] / [↓] / [←] / [→] / [PageUp] / [PageDown] / [Home] / [End] / [Enter]"
 
+  @height 5
+
+  def height, do: @height
+
+  @impl true
   @spec render(TUI.state) :: Element.t
   def render(state) do
     panel(title: "Help") do
