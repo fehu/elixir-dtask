@@ -103,7 +103,7 @@ defmodule DTask.TUI do
     view = %TableDetailsView {
       top_bar: Views.TopBar.render(state),
       extra: Views.HelpPanel.render(state),
-      table: %TestPanel{title: "Table", show: state.data},
+      table: Views.Executors.render_table(state),
       details: %TestPanel{title: "Details"},
       bottom_bar: Views.TabsBar.render(state)
     }

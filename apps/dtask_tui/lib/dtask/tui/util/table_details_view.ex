@@ -140,29 +140,29 @@ defimpl Render, for: TableDetailsView do
       :table_only -> [
         row do
           column(size: @grid_size) do
-            Render.render(t.table, model, nil)
+            maybe_render(t.table, model, nil)
           end
         end
       ]
       {:split_horizontal, {height_top, height_bottom}} -> [
         row do
           column(size: @grid_size) do
-            Render.render(t.table, model, height: height_top)
+            maybe_render(t.table, model, height: height_top)
           end
         end,
         row do
           column(size: @grid_size) do
-            Render.render(t.details, model, height: height_bottom)
+            maybe_render(t.details, model, height: height_bottom)
           end
         end
       ]
       {:split_vertical, {size_left, size_right}} -> [
         row do
           column size: size_left do
-            Render.render(t.table, model, nil)
+            maybe_render(t.table, model, nil)
           end
           column size: size_right do
-            Render.render(t.details, model, nil)
+            maybe_render(t.details, model, nil)
           end
         end
       ]
