@@ -1,4 +1,4 @@
-defmodule DTask.TUI.MainView do
+defmodule DTask.TUI.Views.MainView do
   @moduledoc """
 
   ## [mode: :table_only]
@@ -102,8 +102,11 @@ defmodule DTask.TUI.MainView do
   @grid_size 12
 
   @render_top_bar    Views.TopBar
+  @height_top_bar    1
   @render_bottom_bar Views.TabsBar
+  @height_bottom_bar 1
   @render_extra      Views.HelpPanel
+  @height_extra      Views.HelpPanel.height
 
   @render_main %{
     executors: {Views.ExecutorsTable, Views.DetailsPanel}
@@ -131,33 +134,39 @@ defmodule DTask.TUI.MainView do
       :table_only -> [
         row do
           column(size: @grid_size) do
-            @render_table[state.ui.active_tab].render(state)
+            @render_table[state.ui.tab].render(state)
           end
         end
       ]
       {:split_horizontal, _} -> [
         row do
           column(size: @grid_size) do
-            @render_table[state.ui.active_tab].render(state)
+            @render_table[state.ui.tab].render(state)
           end
         end,
         row do
           column(size: @grid_size) do
-            @render_details[state.ui.active_tab].render(state)
+            @render_details[state.ui.tab].render(state)
           end
         end
       ]
       {:split_vertical, {size_left, size_right}} -> [
         row do
           column size: size_left do
-            @render_table[state.ui.active_tab].render(state)
+            @render_table[state.ui.tab].render(state)
           end
           column size: size_right do
-            @render_details[state.ui.active_tab].render(state)
+            @render_details[state.ui.tab].render(state)
           end
         end
       ]
     end
     view(view_opts, extra ++ main)
+  end
+
+  @spec const_height(TUI.state) :: non_neg_integer
+  def const_height(state) do
+    height0 = @height_top_bar + @height_bottom_bar
+    if state.ui.show_help, do: height0 + @height_extra, else: height0
   end
 end

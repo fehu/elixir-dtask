@@ -1,8 +1,6 @@
 defmodule DTask.TUI do
   @moduledoc false
 
-
-  alias DTask.TUI.MainView
   alias DTask.TUI.{State, Update, Views}
 
   alias Ratatouille.Constants
@@ -19,10 +17,8 @@ defmodule DTask.TUI do
 
   @default_tab          :executors
   @default_tab_data_key :resource_usage
-  @default_tab_cnt_cols &Views.ExecutorsTable.count_columns/1
 
   @default_show_help true
-  @default_show_tabs true
   @layout_wide_threshold 120
   @default_wide_layout   {:split_vertical, {7, 5}}
   # TODO: dynamic, depending on window height
@@ -67,12 +63,11 @@ defmodule DTask.TUI do
       ui: %State.UI{
         window: context.window,
         layout: layout,
-        active_tab: @default_tab,
+        const_height_f: &Views.MainView.const_height/1,
+        tab: @default_tab,
         table: %State.UI.Table{
-          data_key: @default_tab_data_key,
-          count_columns: @default_tab_cnt_cols
+          data_key: @default_tab_data_key
         },
-        show_tabs: @default_show_tabs,
         show_help: @default_show_help
       }
     }
@@ -139,6 +134,6 @@ defmodule DTask.TUI do
 
   @impl true
   @spec render(state) :: Element.t
-  defdelegate render(state), to: MainView
+  defdelegate render(state), to: Views.MainView
 
 end

@@ -1,7 +1,5 @@
 defprotocol DTask.TUI.Render do
   alias Ratatouille.Renderer.Element
 
-  @type state :: term
-
-  @callback render(state) :: Element.t()
+  @callback render(DTask.TUI.state) :: Element.t()
 end

@@ -40,29 +40,14 @@ defmodule DTask.TUI.Update do
     max = if data, do: Enum.count(data), else: 0
     cursor = fn -> state.ui.table.cursor end
     {cond, upd_state} = case op do
-      :+   -> {cursor.() < max, fn -> update_in(state.ui.table.cursor, &(&1 + 1)) end}
-      :max -> {true,            fn -> put_in(state.ui.table.cursor, max) end}
-      i    -> {i <= max,        fn -> put_in(state.ui.table.cursor, i) end}
+      :+   -> {cursor.() < max - 1, fn -> update_in(state.ui.table.cursor, &(&1 + 1)) end}
+      :max -> {true,                fn -> put_in(state.ui.table.cursor, max) end}
+      i    -> {i <= max,            fn -> put_in(state.ui.table.cursor, i) end}
     end
     if cond, do: upd_state.(), else: state
   end
 
-  # Operations that require knowing number of columns
-  def move_cursor(state, :x, :+) do
-    columns = state.ui.table.count_columns.(state)
-    if state.ui.table.offset_x < columns,
-       do: update_in(state.ui.table.offset_x, &(&1 + @offset_x_step)),
-       else: state
-  end
-
-  def move_cursor(state, :x, :-) do
-    if state.ui.table.offset_x > 0,
-       do: update_in(state.ui.table.offset_x, &(&1 - @offset_x_step)),
-       else: state
-  end
-  def move_cursor(state, :x, 0),  do: put_in(state.ui.table.offset_x, 0)
-
-  # Other operations along axis :x are not supported
-  def move_cursor(state, :x, _), do: state
+  # Other operations are not supported
+  def move_cursor(state, _, _), do: state
 
 end

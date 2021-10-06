@@ -29,7 +29,7 @@ defmodule DTask.TUI.Views.TabsBar do
     bar do
       label do
         for {id, txt} <- @entries do
-          style = if id == state.ui.active_tab, do: @active_style, else: []
+          style = if id == state.ui.tab, do: @active_style, else: []
           text([{:content, txt} | style])
         end
       end

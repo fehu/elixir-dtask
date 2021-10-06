@@ -1,20 +1,18 @@
 defmodule DTask.TUI.Views.ExecutorsTable do
   @moduledoc false
 
-  import DTask.Util.Syntax, only: [maybe: 2]
-
   alias Ratatouille.Constants
   import Ratatouille.View
 
-  @behaviour DTask.TUI.Render
+  use DTask.TUI.Render.Table
+
+  @table_title "Executors"
 
   @data_key :resource_usage
 
   @data_cpu_info DTask.ResourceUsage.Extractor.CpuInfo
   @data_mem_info DTask.ResourceUsage.Extractor.MemInfo
   @data_gpu_info DTask.ResourceUsage.Extractor.NvidiaSmi
-
-  @table_title "Executors"
 
   @table_columns_0 [
     {"Node", :node},
@@ -34,6 +32,8 @@ defmodule DTask.TUI.Views.ExecutorsTable do
   @table_header_style [
     attributes: [Constants.attribute(:bold)]
   ]
+
+  @row_style []
   @row_selected_style [
     color: Constants.color(:black),
     background: Constants.color(:white)
@@ -47,47 +47,35 @@ defmodule DTask.TUI.Views.ExecutorsTable do
     background: Constants.color(:red)
   ]
 
-  @spec count_columns(TUI.state) :: non_neg_integer
-  def count_columns(state) do
-    @table_columns_n_0 + count_cpus(state.data[@data_key])
-  end
 
-  defp count_cpus(nil), do: 0
-  defp count_cpus(data) do
-    data |> Stream.map(&elem(&1, 1))
-         |> Stream.filter(&is_map/1)
-         |> Stream.map(&get_in(&1, [@data_cpu_info, :cpus]))
-         |> Stream.filter(&is_map/1)
-         |> Stream.map(&Enum.count/1)
-         |> Enum.max(&>/2, fn -> 0 end)
+  @spec data_key :: atom
+  def data_key, do: @data_key
+
+
+  @typep n_cpus :: non_neg_integer
+  @typep row :: term
+
+  @impl true
+  @spec table_title :: String.t
+  def table_title, do: @table_title
+
+  @impl true
+  @spec pre_render(TUI.state) :: n_cpus
+  def pre_render(state) do
+    data = state.data[@data_key]
+    if data,
+       do: data |> Stream.map(&elem(&1, 1))
+                |> Stream.filter(&is_map/1)
+                |> Stream.map(&get_in(&1, [@data_cpu_info, :cpus]))
+                |> Stream.filter(&is_map/1)
+                |> Stream.map(&Enum.count/1)
+                |> Enum.max(&>/2, fn -> 0 end),
+       else: 0
   end
 
   @impl true
-  @spec render(TUI.state) :: Element.t
-  def render(state) do
-    height = case state.ui.layout do
-      {:split_horizontal, {height, _}} -> height
-      _                                -> :fill
-    end
-    viewport_opts = %{
-      offset_x: state.ui.table.offset_x,
-      offset_y: 0 # TODO
-    }
-    data = state.data[@data_key]
-    selected = if data, do: maybe(Enum.at(data, state.ui.table.cursor), &elem(&1, 0))
-    n_cpus = count_cpus(data)
-
-    panel(title: @table_title, height: height) do
-      viewport(viewport_opts) do
-        table do
-          render_table_header(n_cpus)
-          if data, do: data |> Enum.map(&render_table_row(&1, n_cpus, selected))
-        end
-      end
-    end
-  end
-
-  defp render_table_header(n_cpus) do
+  @spec render_header(TUI.state, n_cpus) :: Element.t
+  def render_header(_, n_cpus) do
     cpus_header = if n_cpus > 0,
                      do: Enum.map(1..n_cpus, &"#{@table_header_cpus}#{&1}"),
                      else: []
@@ -98,19 +86,19 @@ defmodule DTask.TUI.Views.ExecutorsTable do
     end
   end
 
-  defp render_table_row({node, :dead}, n_cpus, selected) do
-    selected? = node == selected
+  @impl true
+  @spec render_row(row, n_cpus, boolean) :: Element.t
+  def render_row({node, :dead}, n_cpus, selected?) do
     table_row(if(selected?, do: @dead_row_selected_style, else: @dead_row_style)) do
       table_cell(content: to_string(node))
-      for i <- 1 .. @table_columns_n_0 + n_cpus - 1 do
+      for _ <- 1 .. @table_columns_n_0 + n_cpus - 1 do
         table_cell(content: "")
       end
     end
   end
 
-  defp render_table_row({node, usage}, n_cpus, selected) do
-    selected? = node == selected
-    table_row(if(selected?, do: @row_selected_style, else: [])) do
+  def render_row({node, usage}, n_cpus, selected?) do
+    table_row(if(selected?, do: @row_selected_style, else: @row_style)) do
       Enum.map @table_data_keys_0, fn
         :node -> table_cell(content: to_string(node))
         keys  -> table_cell(content: percent(get_in(usage, keys)))
@@ -125,7 +113,7 @@ defmodule DTask.TUI.Views.ExecutorsTable do
   end
 
   @spec percent(float | :nan | nil) :: String.t
-  defp percent(nil),   do: ""
+  defp percent(nil),   do: "N/A"
   defp percent(:nan),  do: "N/A"
   defp percent(float), do: "#{round(float * 100)}%"
 end
