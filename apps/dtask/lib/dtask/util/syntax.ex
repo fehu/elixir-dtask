@@ -11,4 +11,7 @@ defmodule DTask.Util.Syntax do
     end
   end
 
+  @spec maybe(x | nil, (x -> y)) :: y | nil when x: term, y: term
+  def maybe(nil, _), do: nil
+  def maybe(x, f), do: f.(x)
 end

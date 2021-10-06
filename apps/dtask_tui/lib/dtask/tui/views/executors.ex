@@ -1,6 +1,8 @@
 defmodule DTask.TUI.Views.Executors do
   @moduledoc false
 
+  import DTask.Util.Syntax, only: [maybe: 2]
+
   alias Ratatouille.Constants
   import Ratatouille.View
 
@@ -48,8 +50,8 @@ defmodule DTask.TUI.Views.Executors do
       _                                -> :fill
     end
     viewport_opts = Map.take(state.ui.table, [:offset_x, :offset_y])
-    selected = state.ui.table.selected
     data = state.data.resource_usage
+    selected = if data, do: maybe(Enum.at(data, state.ui.table.offset_y), &elem(&1, 0))
     n_cpus =
       if data,
          do: data |> Stream.map(&elem(&1, 1))
