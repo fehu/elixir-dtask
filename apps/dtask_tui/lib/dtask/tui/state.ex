@@ -89,12 +89,14 @@ defmodule DTask.TUI.State do
     defmodule Table do
       use StructAccess
 
-      defstruct [:selected, offset_x: 0, offset_y: 0]
+      @enforce_keys [:data_key, :count_columns]
+      defstruct     [:data_key, :count_columns, cursor: 0, offset_x: 0]
 
       @type t :: %__MODULE__{
-                   selected: term | nil,
-                   offset_x: non_neg_integer,
-                   offset_y: non_neg_integer
+                   data_key: atom,
+                   count_columns: (term -> non_neg_integer),
+                   cursor: non_neg_integer,
+                   offset_x: non_neg_integer
                  }
     end
   end

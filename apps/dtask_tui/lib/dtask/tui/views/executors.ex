@@ -6,6 +6,8 @@ defmodule DTask.TUI.Views.Executors do
   alias Ratatouille.Constants
   import Ratatouille.View
 
+  @data_key :resource_usage
+
   @data_cpu_info DTask.ResourceUsage.Extractor.CpuInfo
   @data_mem_info DTask.ResourceUsage.Extractor.MemInfo
   @data_gpu_info DTask.ResourceUsage.Extractor.NvidiaSmi
@@ -43,24 +45,34 @@ defmodule DTask.TUI.Views.Executors do
     background: Constants.color(:red)
   ]
 
+  @spec count_columns(TUI.state) :: non_neg_integer
+  def count_columns(state) do
+    @table_columns_n_0 + count_cpus(state.data[@data_key])
+  end
+
+  defp count_cpus(nil), do: 0
+  defp count_cpus(data) do
+    data |> Stream.map(&elem(&1, 1))
+         |> Stream.filter(&is_map/1)
+         |> Stream.map(&get_in(&1, [@data_cpu_info, :cpus]))
+         |> Stream.filter(&is_map/1)
+         |> Stream.map(&Enum.count/1)
+         |> Enum.max(&>/2, fn -> 0 end)
+  end
+
   @spec render_table(TUI.state) :: Element.t
   def render_table(state) do
     height = case state.ui.layout do
       {:split_horizontal, {height, _}} -> height
       _                                -> :fill
     end
-    viewport_opts = Map.take(state.ui.table, [:offset_x, :offset_y])
-    data = state.data.resource_usage
-    selected = if data, do: maybe(Enum.at(data, state.ui.table.offset_y), &elem(&1, 0))
-    n_cpus =
-      if data,
-         do: data |> Stream.map(&elem(&1, 1))
-                  |> Stream.filter(&is_map/1)
-                  |> Stream.map(&get_in(&1, [@data_cpu_info, :cpus]))
-                  |> Stream.filter(&is_map/1)
-                  |> Stream.map(&Enum.count/1)
-                  |> Enum.max(&>/2, fn -> 0 end),
-         else: 0
+    viewport_opts = %{
+      offset_x: state.ui.table.offset_x,
+      offset_y: 0 # TODO
+    }
+    data = state.data[@data_key]
+    selected = if data, do: maybe(Enum.at(data, state.ui.table.cursor), &elem(&1, 0))
+    n_cpus = count_cpus(data)
 
     panel(title: @table_title, height: height) do
       viewport(viewport_opts) do
