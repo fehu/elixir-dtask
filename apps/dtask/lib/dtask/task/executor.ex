@@ -23,7 +23,10 @@ defmodule DTask.Task.Executor do
   # # # Callbacks # # #
 
   @impl true
-  def init(cfg) do
+  def init(cfg={dispatcher, _}) do
+    # Monitor `dispatcher` process
+    Process.monitor(dispatcher)
+
     {:ok, cfg}
   end
 
@@ -41,5 +44,13 @@ defmodule DTask.Task.Executor do
       end
     Dispatcher.report_finished(dispatcher, task_id, outcome)
     {:noreply, cfg}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _, :process, process, reason}, cfg={dispatcher, _}) do
+    case process do
+      ^dispatcher -> {:stop, {:dispatcher_down, reason}, cfg}
+      _           -> {:noreply, cfg}
+    end
   end
 end

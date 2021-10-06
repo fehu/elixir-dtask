@@ -26,6 +26,7 @@ defmodule DTask.App.Runner do
                     }
                   }
 
+  @impl true
   def start(_type, _args) do
     cfg = Enum.into(Application.get_all_env(@app_name), %{})
 
@@ -38,7 +39,10 @@ defmodule DTask.App.Runner do
         start: {Task.Executor, :start_link, [
           {Task.Dispatcher, cfg.master_node},
           Task.Reporter.MonitorBroadcastReporter.Builder
-        ]}
+        ]},
+        type: :worker,
+        restart: :transient,
+        shutdown: 100
       },
       %{
         id: ResourceUsage.Reporter,
@@ -46,7 +50,10 @@ defmodule DTask.App.Runner do
           cfg.resource_report_interval,
           cfg.resource_usage.extractor,
           cfg.resource_usage.params
-        ]}
+        ]},
+        type: :worker,
+        restart: :transient,
+        shutdown: 100
       }
     ]
 
@@ -61,5 +68,11 @@ defmodule DTask.App.Runner do
     end
 
     supervisor
+  end
+
+  @impl true
+  def stop(state) do
+    Logger.warning("Application #{@app_name} exited. Stopping the system.")
+    System.stop
   end
 end
