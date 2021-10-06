@@ -1,8 +1,6 @@
 defmodule DTask.TUI.Views.Executors do
   @moduledoc false
 
-  alias DTask.TUI.State
-
   alias Ratatouille.Constants
   import Ratatouille.View
 
@@ -11,12 +9,36 @@ defmodule DTask.TUI.Views.Executors do
   @data_gpu_info DTask.ResourceUsage.Extractor.NvidiaSmi
 
   @table_title "Executors"
+
+  @table_columns_0 [
+    {"Node", :node},
+    {"GPU",  [@data_gpu_info, :gpu]},
+    {"VMem", [@data_gpu_info, :mem]},
+    {"RAM",  [@data_mem_info, :ram]},
+    {"swap", [@data_mem_info, :swap]},
+    {"CPU*", [@data_cpu_info, :cpu_total]}
+  ]
+  @table_header_cpus "CPU"
+  @data_cpus [@data_cpu_info, :cpus]
+
+  @table_header_0    @table_columns_0 |> Enum.map(&elem(&1, 0))
+  @table_data_keys_0 @table_columns_0 |> Enum.map(&elem(&1, 1))
+  @table_columns_n_0 Enum.count(@table_columns_0)
+
   @table_header_style [
     attributes: [Constants.attribute(:bold)]
   ]
   @row_selected_style [
     color: Constants.color(:black),
     background: Constants.color(:white)
+  ]
+
+  @dead_row_style [
+    color: Constants.color(:red)
+  ]
+  @dead_row_selected_style [
+    color: Constants.color(:black),
+    background: Constants.color(:red)
   ]
 
   @spec render_table(TUI.state) :: Element.t
@@ -31,54 +53,51 @@ defmodule DTask.TUI.Views.Executors do
                   |> Stream.map(&Enum.count/1)
                   |> Enum.max(&>/2, fn -> 0 end),
          else: 0
-
     panel(title: @table_title, height: :fill) do
       # TODO
       viewport() do
         table do
-          # Header
-          table_row(@table_header_style) do
-            table_cell(content: "Node")
-            table_cell(content: "GPU")
-            table_cell(content: "GPU MEM")
-            table_cell(content: "RAM")
-            table_cell(content: "SWAP")
-            table_cell(content: "CPU")
+          render_table_header(n_cpus)
+          if data, do: data |> Enum.map(&render_table_row(&1, n_cpus))
+        end
+      end
+    end
+  end
 
-            if n_cpus > 0 do
-              for i <- 1..n_cpus do
-                table_cell(content: "CPU#{i}")
-              end
-            end
-          end
+  defp render_table_header(n_cpus) do
+    cpus_header = if n_cpus > 0,
+                     do: Enum.map(1..n_cpus, &"#{@table_header_cpus}#{&1}"),
+                     else: []
+    table_row(@table_header_style) do
+      for header <- @table_header_0 ++ cpus_header do
+        table_cell(content: header)
+      end
+    end
+  end
 
-          # Rows
-          if data do
-            for {node, usage} <- data do
-              # TODO: handle usage == :dead
-              cpu = usage[@data_cpu_info]
-              mem = usage[@data_mem_info]
-              gpu = usage[@data_gpu_info]
+  defp render_table_row({node, :dead}, n_cpus) do
+    # TODO
+    selected? = false
+    table_row(if(selected?, do: @dead_row_selected_style, else: @dead_row_style)) do
+      table_cell(content: to_string(node))
+      for i <- 1 .. @table_columns_n_0 + n_cpus - 1 do
+        table_cell(content: "")
+      end
+    end
+  end
 
-              # TODO
-              selected? = false
+  defp render_table_row({node, usage}, n_cpus) do
+    # TODO
+    selected? = false
+    table_row(if(selected?, do: @row_selected_style, else: [])) do
+      Enum.map @table_data_keys_0, fn
+        :node -> table_cell(content: to_string(node))
+        keys  -> table_cell(content: percent(get_in(usage, keys)))
+      end
 
-              table_row(if(selected?, do: @row_selected_style, else: [])) do
-                table_cell(content: to_string(node))
-                table_cell(content: percent(gpu[:gpu]))
-                table_cell(content: percent(gpu[:mem]))
-                table_cell(content: percent(mem[:ram]))
-                table_cell(content: percent(mem[:swap]))
-                table_cell(content: percent(cpu[:cpu_total]))
-
-                if n_cpus > 0 do
-                  for i <- 1..n_cpus do
-                    table_cell(content: percent(cpu.cpus[i]))
-                  end
-                end
-              end
-            end
-          end
+      if n_cpus > 0 do
+        for i <- 1..n_cpus do
+          table_cell(content: percent(get_in(usage, @data_cpus)[i]))
         end
       end
     end
