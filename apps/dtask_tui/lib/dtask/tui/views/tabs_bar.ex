@@ -1,6 +1,7 @@
 defmodule DTask.TUI.Views.TabsBar do
   @moduledoc false
 
+  alias Ratatouille.Constants
   import Ratatouille.View
 
   @entries [
@@ -18,7 +19,7 @@ defmodule DTask.TUI.Views.TabsBar do
     {:new_task,       "[N]ew"}
   ]
 
-  @active_style [attributes: [:bold]]
+  @active_style [attributes: [Constants.attribute(:bold)]]
 
   @spec render(TUI.state) :: Element.t
   def render(state) do

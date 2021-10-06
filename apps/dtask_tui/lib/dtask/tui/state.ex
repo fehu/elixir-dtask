@@ -39,9 +39,12 @@ defmodule DTask.TUI.State do
 
     defstruct [:tasks, :resource_usage]
 
+    @type tasks :: DTask.Task.Monitor.state | nil
+    @type resource_usage :: DTask.ResourceUsage.Collector.usage | nil
+
     @type t :: %__MODULE__{
-                 tasks: DTask.Task.Monitor.state,
-                 resource_usage: DTask.ResourceUsage.Collector.usage
+                 tasks: tasks,
+                 resource_usage: resource_usage
                }
   end
 
