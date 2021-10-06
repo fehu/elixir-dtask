@@ -68,12 +68,7 @@ defmodule DTask.TUI.State do
                   | {:split_vertical,   ratio :: pos_int_2}
                   | :table_only
 
-    @type tab :: :executors
-               | :tasks_all
-               | :tasks_finished
-               | :tasks_pending
-               | :tasks_running
-               | :test
+    @type tab :: DTask.TUI.Tab.t
 
     @type table :: __MODULE__.Table.t
 
@@ -91,11 +86,9 @@ defmodule DTask.TUI.State do
     defmodule Table do
       use StructAccess
 
-      @enforce_keys [:data_key]
-      defstruct     [:data_key, cursor: 0]
+      defstruct [cursor: 0]
 
       @type t :: %__MODULE__{
-                   data_key: atom,
                    cursor: non_neg_integer
                  }
     end

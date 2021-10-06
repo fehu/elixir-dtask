@@ -2,6 +2,7 @@ defmodule DTask.TUI do
   @moduledoc false
 
   alias DTask.TUI.{State, Update, Views}
+  alias DTask.TUI.Tab
 
   alias Ratatouille.Constants
   alias Ratatouille.Renderer.Element
@@ -15,8 +16,55 @@ defmodule DTask.TUI do
 
   @app_name :dtask_tui
 
-  @default_tab          :test
-  @default_tab_data_key Views.TestTable.data_key
+  @tabs [
+    %Tab{
+      id: :executors,
+      data_key: Views.ExecutorsTable.data_key,
+      shortcuts: [?e, ?E],
+      render_main: Views.ExecutorsTable,
+      render_side: Views.DetailsPanel
+    },
+    %Tab{
+      id: :tasks_all,
+      data_key: Views.TestTable.data_key,
+      shortcuts: [?t, ?T],
+      render_main: Views.TestTable,
+      render_side: Views.DetailsPanel
+    },
+    %Tab{
+      id: :tasks_running,
+      data_key: Views.TestTable.data_key,
+      shortcuts: [?r, ?R],
+      render_main: Views.TestTable,
+      render_side: Views.DetailsPanel
+    },
+    %Tab{
+      id: :tasks_finished,
+      data_key: Views.TestTable.data_key,
+      shortcuts: [?f, ?F],
+      render_main: Views.TestTable,
+      render_side: Views.DetailsPanel
+    },
+    %Tab{
+      id: :tasks_pending,
+      data_key: Views.TestTable.data_key,
+      shortcuts: [?p, ?P],
+      render_main: Views.TestTable,
+      render_side: Views.DetailsPanel
+    },
+    %Tab{
+      id: :new_task,
+      data_key: Views.TestTable.data_key,
+      shortcuts: [?n, ?N],
+      render_main: Views.TestTable
+    }
+  ]
+
+  @tabs_map     @tabs |> Enum.map(&{&1.id, &1}) |> Map.new
+  @tab_keys_map @tabs |> Enum.flat_map(fn tab -> tab.shortcuts |> Enum.map(&{&1, tab}) end) |> Map.new
+  @tab_keys     Map.keys(@tab_keys_map)
+
+  @default_tab @tabs_map[:executors]
 
   @default_show_help true
   @layout_wide_threshold 120
@@ -67,9 +115,7 @@ defmodule DTask.TUI do
         layout: layout,
         const_height_f: &Views.MainView.const_height/1,
         tab: @default_tab,
-        table: %State.UI.Table{
-          data_key: @default_tab_data_key
-        },
+        table: %State.UI.Table{},
         show_help: @default_show_help
       }
     }
@@ -108,13 +154,14 @@ defmodule DTask.TUI do
   def update(state, {:event, event}) do
     case event do
       # Move cursor
-      %{key: @key_arrow_up}    -> state |> Update.move_cursor(:y, :-)
-      %{key: @key_arrow_down}  -> state |> Update.move_cursor(:y, :+)
-      %{key: @key_arrow_left}  -> state |> Update.move_cursor(:x, :-)
-      %{key: @key_arrow_right} -> state |> Update.move_cursor(:x, :+)
-      %{key: @key_home}        -> state |> Update.move_cursor(:y, 0)    |> Update.move_cursor(:x, 0)
-      %{key: @key_end}         -> state |> Update.move_cursor(:y, :max) |> Update.move_cursor(:x, 0)
-      _                        -> state
+      %{key: @key_arrow_up}        -> state |> Update.move_cursor(:y, :-)
+      %{key: @key_arrow_down}      -> state |> Update.move_cursor(:y, :+)
+      %{key: @key_arrow_left}      -> state |> Update.move_cursor(:x, :-)
+      %{key: @key_arrow_right}     -> state |> Update.move_cursor(:x, :+)
+      %{key: @key_home}            -> state |> Update.move_cursor(:y, 0)    |> Update.move_cursor(:x, 0)
+      %{key: @key_end}             -> state |> Update.move_cursor(:y, :max) |> Update.move_cursor(:x, 0)
+      %{ch: c} when c in @tab_keys -> state |> Update.tab(@tab_keys_map[c])
+      _                            -> state
     end
   end
 

@@ -9,6 +9,7 @@ defmodule DTask.TUI.Render.Table do
   @typep selected? :: boolean
 
   @callback table_title :: String.t
+  @callback data_key :: atom
   @callback pre_render(TUI.state) :: cached
   @callback slice_data(TUI.state, cached) :: [{row, index}]
   @callback render_header(TUI.state, cached) :: Element.t
@@ -45,7 +46,7 @@ defmodule DTask.TUI.Render.Table do
       @const_table_height 5
       @spec slice_data(TUI.state, term) :: [term]
       def slice_data(state, _cache) do
-        case state.data[state.ui.table.data_key] do
+        case state.data[data_key()] do
           nil -> []
           data ->
             n_data = case data do

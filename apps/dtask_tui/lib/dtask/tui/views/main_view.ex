@@ -108,12 +108,6 @@ defmodule DTask.TUI.Views.MainView do
   @render_extra      Views.HelpPanel
   @height_extra      Views.HelpPanel.height
 
-  @render_main %{
-    executors: {Views.ExecutorsTable, Views.DetailsPanel},
-    test:      {Views.TestTable, Views.DetailsPanel}
-  }
-  @render_table   @render_main |> Enum.map(fn {k, {v, _}} -> {k, v} end)
-  @render_details @render_main |> Enum.map(fn {k, {_, v}} -> {k, v} end)
 
   @impl true
   @spec render(TUI.state) :: Element.t()
@@ -131,33 +125,33 @@ defmodule DTask.TUI.Views.MainView do
                  end
                ],
                else: []
-    main = case state.ui.layout do
-      :table_only -> [
+    main = case {state.ui.layout, state.ui.tab.render_side} do
+      {layout, render_side} when layout == :table_only or is_nil(render_side) -> [
         row do
           column(size: @grid_size) do
-            @render_table[state.ui.tab].render(state)
+            state.ui.tab.render_main.render(state)
           end
         end
       ]
-      {:split_horizontal, _} -> [
+      {{:split_horizontal, _}, render_side} -> [
         row do
           column(size: @grid_size) do
-            @render_table[state.ui.tab].render(state)
+            state.ui.tab.render_main.render(state)
           end
         end,
         row do
           column(size: @grid_size) do
-            @render_details[state.ui.tab].render(state)
+            render_side.render(state)
           end
         end
       ]
-      {:split_vertical, {size_left, size_right}} -> [
+      {{:split_vertical, {size_left, size_right}}, render_side} -> [
         row do
           column size: size_left do
-            @render_table[state.ui.tab].render(state)
+            state.ui.tab.render_main.render(state)
           end
           column size: size_right do
-            @render_details[state.ui.tab].render(state)
+            render_side.render(state)
           end
         end
       ]

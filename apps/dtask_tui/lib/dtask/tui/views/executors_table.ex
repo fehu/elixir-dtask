@@ -48,6 +48,7 @@ defmodule DTask.TUI.Views.ExecutorsTable do
   ]
 
 
+  @impl true
   @spec data_key :: atom
   def data_key, do: @data_key
 

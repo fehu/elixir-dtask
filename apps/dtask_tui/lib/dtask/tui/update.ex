@@ -2,11 +2,9 @@ defmodule DTask.TUI.Update do
   @moduledoc false
 
   alias DTask.{ResourceUsage, Task}
-  alias DTask.TUI.State
+  alias DTask.TUI.{State, Tab}
 
   alias Ratatouille.Runtime.Command
-
-  @offset_x_step 5
 
   @typep data :: :tasks
                | :resource_usage
@@ -36,7 +34,7 @@ defmodule DTask.TUI.Update do
   def move_cursor(state, :y, op) when op == :+
                                    or op == :max
                                    or (is_integer(op) and op > 0) do
-    data = state.data[state.ui.table.data_key]
+    data = state.data[state.ui.tab.data_key]
     max = if data, do: Enum.count(data), else: 0
     cursor = fn -> state.ui.table.cursor end
     {cond, upd_state} = case op do
@@ -49,5 +47,11 @@ defmodule DTask.TUI.Update do
 
   # Other operations are not supported
   def move_cursor(state, _, _), do: state
+
+  @spec tab(State.t, Tab.t) :: State.t
+  def tab(state, tab) do
+    state |> put_in([:ui, :tab], tab)
+          |> put_in([:ui, :table], %State.UI.Table{})
+  end
 
 end

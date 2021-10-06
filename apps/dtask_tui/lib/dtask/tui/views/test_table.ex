@@ -16,6 +16,7 @@ defmodule DTask.TUI.Views.TestTable do
     background: Constants.color(:white)
   ]
 
+  @impl true
   @spec data_key :: atom
   def data_key, do: @data_key
 
