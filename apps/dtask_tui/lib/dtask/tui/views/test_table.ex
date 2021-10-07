@@ -1,9 +1,6 @@
 defmodule DTask.TUI.Views.TestTable do
   @moduledoc false
 
-  alias Ratatouille.Constants
-  import Ratatouille.View
-
   use DTask.TUI.Render.Table
 
   @table_title "Test"

@@ -26,10 +26,11 @@ defmodule DTask.TUI do
     },
     %Tab{
       id: :tasks_all,
-      data_key: Views.TestTable.data_key,
+      data_key: Views.TasksTable.data_key,
       shortcuts: [?t, ?T],
-      render_main: Views.TestTable,
-      render_side: Views.DetailsPanel
+      render_main: Views.TasksTable,
+      render_side: Views.DetailsPanel,
+      count_data: &Views.TasksTable.count_data/1
     },
     %Tab{
       id: :tasks_running,

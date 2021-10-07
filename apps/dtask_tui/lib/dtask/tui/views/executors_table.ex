@@ -1,8 +1,7 @@
 defmodule DTask.TUI.Views.ExecutorsTable do
   @moduledoc false
 
-  alias Ratatouille.Constants
-  import Ratatouille.View
+  alias DTask.ResourceUsage.Collector
 
   use DTask.TUI.Render.Table
 
@@ -47,14 +46,12 @@ defmodule DTask.TUI.Views.ExecutorsTable do
     background: Constants.color(:red)
   ]
 
+  @type row :: Collector.usage_tuple
+  @typep n_cpus :: non_neg_integer
 
   @impl true
   @spec data_key :: atom
   def data_key, do: @data_key
-
-
-  @typep n_cpus :: non_neg_integer
-  @typep row :: term
 
   @impl true
   @spec table_title :: String.t
