@@ -3,21 +3,24 @@ defmodule DTask.Task.Impl.TestJobTask do
 
   alias DTask.Task
   alias DTask.Task.{Reporter, ShellCmd}
+  alias DTask.Task.DTO.Progress
 
   @behaviour Task
 
   @type params :: term
 
+  @regex ~r"^\s*(.*): (\d+) / (\d+)\s*$"
   @spec exec(Reporter.t, params) :: no_return
   def exec(reporter, _params) do
     cmd = "elixir dev/test_job.exs"
     dir = "."
     handle_data = fn
-      _, "Working: " <> progress ->
-        report = String.trim(progress)
-        Reporter.progress(reporter, report)
-      _, _ ->
-        :do_nothing
+      _, data ->
+        case Regex.run(@regex, data) do
+          [_, label, step, total] ->
+            Reporter.progress(reporter, Progress.new(label, step, total))
+          _ -> nil
+        end
     end
     handle_exit = fn
       _, 0 -> {:success, "done"}

@@ -2,7 +2,10 @@ defmodule DTask.TUI.Views.TasksTable do
   @moduledoc false
 
   alias DTask.Task.{Dispatcher, Monitor}
+  alias DTask.Task.DTO.Progress
   alias DTask.TUI
+
+  import DTask.Util.Syntax
 
   use DTask.TUI.Render.Table
 
@@ -73,7 +76,7 @@ defmodule DTask.TUI.Views.TasksTable do
         {
           @running_color,
           show_timestamp(s.dispatched),
-          show_progress(s),
+          show_progress(s.progress),
           ""
         }
       {:finished, s=%{outcome: {outcome, _}}} ->
@@ -102,14 +105,16 @@ defmodule DTask.TUI.Views.TasksTable do
     "#{l2.(day)}/#{l2.(month)} #{l2.(hour)}:#{l2.(min)}:#{l2.(sec)}"
   end
 
-  defp show_progress(%{label: label, percent: percent, step: step, total: total, time: time}) do
-    "#{label}: [#{show_progress_bar(percent)}] #{step}/#{total} (#{time})"
+  defp show_progress(p=%Progress{label: label, step: step, total: total}) do
+    time = maybe(Map.get(p, :time), &" (#{&1})") <|> ""
+
+    "#{label}: [#{show_progress_bar(step / total)}] #{step}/#{total}" <> time
   end
+  defp show_progress(%Progress{label: label}), do: label
   defp show_progress(_), do: @running_label
 
-  defp show_progress_bar(percent_string) do
-    {percent, ""} = Integer.parse(percent_string)
-    progress = round(@progress_width * percent / 100)
-    String.duplicate(@progress_symbol, progress) <> String.duplicate("", @progress_width - progress)
+  defp show_progress_bar(percent) do
+    progress = round(@progress_width * percent)
+    String.duplicate(@progress_symbol, progress) <> String.duplicate(" ", @progress_width - progress)
   end
 end

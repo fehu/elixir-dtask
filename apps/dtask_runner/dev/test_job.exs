@@ -5,7 +5,7 @@ defmodule TestJob do
     IO.puts("Working: #{n} / #{n_max}")
     :timer.sleep(wait)
 
-    if :rand.uniform() > 0.8 do
+    if :rand.uniform() > 0.9 do
       IO.puts(:standard_error, "FAIL")
       exit({:shutdown, 1})
     end

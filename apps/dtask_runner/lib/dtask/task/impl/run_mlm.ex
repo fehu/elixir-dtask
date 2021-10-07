@@ -160,8 +160,8 @@ defmodule DTask.Task.Impl.RunMLM do
   @regex ~r"^(.+:)?\s*(\d{1,3})%\|[ █]*\| (\d+)/(\d+) \[(\d{2}:\d{2})<.*"
   defp parse_line_progress(data) do
     case Regex.run(@regex, data) do
-      [_, label, percent, step, total, time] ->
-        {:progress, %{label: label, percent: percent, step: step, total: total, time: time}}
+      [_, label, _percent, step, total, time] ->
+        {:progress, Progress.new(label, step, total, time)}
       _ ->
         {:mismatch, data}
     end
