@@ -106,7 +106,7 @@ defmodule DTask.TUI.Views.MainView do
   @render_bottom_bar Views.TabsBar
   @height_bottom_bar 1
   @render_extra      Views.HelpPanel
-  @height_extra      Views.HelpPanel.height
+  @height_extra      &Views.HelpPanel.height/1
 
 
   @impl true
@@ -162,6 +162,6 @@ defmodule DTask.TUI.Views.MainView do
   @spec const_height(TUI.state) :: non_neg_integer
   def const_height(state) do
     height0 = @height_top_bar + @height_bottom_bar
-    if state.ui.show_help, do: height0 + @height_extra, else: height0
+    height1 = if state.ui.show_help, do: height0 + @height_extra.(state), else: height0
   end
 end

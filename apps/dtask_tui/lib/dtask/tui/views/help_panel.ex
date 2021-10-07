@@ -30,7 +30,12 @@ defmodule DTask.TUI.Views.HelpPanel do
 
   @height 6
 
-  def height, do: @height
+  def height(state) do
+    case state.ui.layout do
+      :table_only -> @height - 1
+      _           -> @height
+    end
+  end
 
   @impl true
   @spec render(TUI.state) :: Element.t
