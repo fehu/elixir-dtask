@@ -3,17 +3,9 @@ defmodule DTask.TUI.Views.DetailsPanel do
 
   alias DTask.TUI
 
-  import Ratatouille.View
-
-  @behaviour DTask.TUI.Render
-
-  ### TODO
+  use DTask.TUI.Render.Details
 
   @impl true
-  @spec render(TUI.state) :: Element.t
-  def render(state) when state.ui.layout != :table_only do
-    panel title: "Details", height: :fill do
-      label(content: "=== TODO ===")
-    end
-  end
+  @spec render_details(TUI.state, term) :: Element.t
+  def render_details(_, x), do: render_inspect(x)
 end
