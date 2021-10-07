@@ -2,6 +2,7 @@ defmodule DTask.TUI.Render.Table do
   @moduledoc false
 
   alias DTask.TUI
+  alias DTask.TUI.Views.MainView
 
   @typep cached :: term
   @typep n_rows :: pos_integer
@@ -30,14 +31,7 @@ defmodule DTask.TUI.Render.Table do
       @impl TUI.Render
       @spec render(TUI.state) :: Element.t
       def render(state) do
-        free_height = main_height(state)
-        {panel_height, n_rows} = case state.ui.layout do
-          {:split_horizontal, ratio} ->
-            h = max(round(free_height * ratio), 1)
-            {h + @const_table_height, h}
-          _ ->
-            {:fill, free_height - @const_table_height}
-        end
+        {panel_height, n_rows} = MainView.table_height_and_rows(state)
         cached = pre_render(state)
         panel(title: table_title(), height: panel_height) do
           table do
@@ -73,10 +67,6 @@ defmodule DTask.TUI.Render.Table do
 
             data |> Stream.with_index |> Enum.slice(offset, n_rows)
         end
-      end
-
-      defp main_height(state) do
-        state.ui.window.height - state.ui.const_height_f.(state)
       end
 
       defoverridable pre_render: 1, slice_data: 3, prepare_data: 1

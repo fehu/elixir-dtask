@@ -130,7 +130,6 @@ defmodule DTask.TUI do
       ui: %State.UI{
         window: context.window,
         layout: layout,
-        const_height_f: &Views.MainView.const_height/1,
         tab: @default_tab,
         table: %State.UI.Table{},
         show_help: @default_show_help

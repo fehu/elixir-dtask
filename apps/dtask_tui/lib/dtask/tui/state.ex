@@ -57,8 +57,8 @@ defmodule DTask.TUI.State do
   defmodule UI do
     use StructAccess
 
-    @enforce_keys [:window, :layout, :const_height_f, :tab, :table, :show_help]
-    defstruct     [:window, :layout, :const_height_f, :tab, :table, :show_help]
+    @enforce_keys [:window, :layout, :tab, :table, :show_help]
+    defstruct     [:window, :layout, :tab, :table, :show_help]
 
     @typep pos_int_2 :: {pos_integer, pos_integer}
 
@@ -78,7 +78,6 @@ defmodule DTask.TUI.State do
     @type t :: %__MODULE__{
                  window: window,
                  layout: layout,
-                 const_height_f: (DTask.TUI.state -> non_neg_integer),
                  tab: tab,
                  table: table,
                  show_help: boolean

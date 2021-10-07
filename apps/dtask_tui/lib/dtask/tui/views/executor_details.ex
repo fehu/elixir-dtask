@@ -2,6 +2,7 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   @moduledoc false
 
   alias DTask.ResourceUsage.Collector
+  alias DTask.TUI.Views.MainView
 
   use DTask.TUI.Render.Details
 
@@ -36,8 +37,9 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   def render_details(state, {node, _}) do
     hist = render_hist(state, node)
     case state.ui.layout do
-      {:split_horizontal, ratio} ->
-        height = floor(main_height(state) * (1 - ratio)) - @chart_static_height * 2
+      {:split_horizontal, _} ->
+        # TODO
+        height = MainView.details_height(state) - @chart_static_height * 2
         size = if length(hist) > 0, do: floor(@grid_size / length(hist)), else: 0
         row do
           for render <- hist do
@@ -47,7 +49,7 @@ defmodule DTask.TUI.Views.ExecutorDetails do
           end
         end
       {:split_vertical, _} ->
-        height = floor(main_height(state) / length(hist)) - @chart_static_height
+        height = floor(MainView.main_height(state) / length(hist)) - @chart_static_height
         for render <- hist do
           render.(height)
         end

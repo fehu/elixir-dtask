@@ -38,10 +38,6 @@ defmodule DTask.TUI.Render.Details do
         end
       end
 
-      defp main_height(state) do
-        state.ui.window.height - state.ui.const_height_f.(state)
-      end
-
       defoverridable render_empty: 1
       # # # # # End Quoted # # # # #
     end
