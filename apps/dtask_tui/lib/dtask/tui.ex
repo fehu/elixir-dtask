@@ -29,7 +29,7 @@ defmodule DTask.TUI do
       data_key: Views.TasksTable.data_key,
       shortcuts: [?t, ?T],
       render_main: Views.TasksTable,
-      render_side: Views.DetailsPanel
+      render_side: Views.TaskDetails
     },
     %Tab{
       id: :tasks_running,
