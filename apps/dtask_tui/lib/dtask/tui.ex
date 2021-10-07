@@ -100,6 +100,9 @@ defmodule DTask.TUI do
   def init(context) do
     cfg = Enum.into(Application.get_all_env(@app_name), %{})
 
+    # Disable logger
+    Logger.configure(level: :error)
+
     # State.Connection
 
     ctrl_node = Map.get(cfg, :master_node)
