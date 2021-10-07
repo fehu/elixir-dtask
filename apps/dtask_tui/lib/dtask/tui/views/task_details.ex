@@ -3,10 +3,13 @@ defmodule DTask.TUI.Views.TaskDetails do
 
   alias DTask.TUI
   alias DTask.TUI.Views.{MainView, TaskCommon}
+  alias DTask.Task.DTO.Progress
 
   use DTask.TUI.Render.Details
 
   @default_color TaskCommon.default_color
+  @unknown_label "Unknown"
+  @unknown_color @default_color
   @pending_label TaskCommon.pending_label |> String.capitalize
   @pending_color TaskCommon.pending_color
   @running_label TaskCommon.running_label |> String.capitalize
@@ -30,11 +33,19 @@ defmodule DTask.TUI.Views.TaskDetails do
 
     progress_elems = case task_state do
       {:running, s} ->
-        progress_width = max MainView.details_width(state), @max_progress_width
+        progress_label   = if is_struct(s.progress, Progress), do: s.progress.label, else: inspect(s.progress)
+        progress_steps   = TaskCommon.show_progress_steps(s.progress, "", " ")
+        progress_percent = TaskCommon.show_progress_percent(s.progress, " ")
+        progress_width = min(MainView.details_width(state), @max_progress_width)
+                       - String.length(progress_steps)
+                       - String.length(progress_percent)
+                       - 2
+        progress_bar  = TaskCommon.show_progress_bar(s.progress, progress_width)
+        progress_time = TaskCommon.show_progress_time(s.progress, "[", "] ")
         [
           kv("Node", s.node),
-          label([content: s.progress.label] ++ @subtitle_style),
-          label(content: TaskCommon.show_progress_bar(s.progress, progress_width))
+          label([content: progress_time <> progress_label] ++ @subtitle_style),
+          label(content: progress_steps <> "[#{progress_bar}]" <> progress_percent)
         ]
       _ -> []
     end
@@ -82,6 +93,7 @@ defmodule DTask.TUI.Views.TaskDetails do
 
   defp render_state_label(task_state) do
     params = case task_state do
+      :unknown       -> [content: @unknown_label, color: @unknown_color]
       :pending       -> [content: @pending_label, color: @pending_color]
       {:running, _}  -> [content: @running_label, color: @running_color]
       {:finished, s} ->

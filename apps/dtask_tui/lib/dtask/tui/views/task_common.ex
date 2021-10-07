@@ -84,13 +84,37 @@ defmodule DTask.TUI.Views.TaskCommon do
   end
 
   @spec show_progress(term, pos_integer) :: String.t | nil
-  def show_progress(p=%Progress{label: label, step: step, total: total}, progress_width) do
-    time = maybe(Map.get(p, :time), &" (#{&1})") <|> ""
-
-    "#{label}: [#{show_progress_bar(step / total, progress_width)}] #{step}/#{total}" <> time
+  def show_progress(p=%Progress{label: label, step: _, total: _}, progress_width) do
+    "#{label}: [#{show_progress_bar(p, progress_width)}] #{show_progress_steps(p)}"
+    <> show_progress_time(p, " (", ")")
   end
   def show_progress(%Progress{label: label}, _), do: label
   def show_progress(_, _), do: nil
+
+  @spec show_progress_percent(term, String.t, String.t) :: String.t
+  def show_progress_percent(term, left \\ "", right \\ "")
+  def show_progress_percent(%Progress{step: step, total: total}, left, right) do
+    if total > 0,
+       do: left <> "#{round(step / total * 100)}%" <> right,
+       else: ""
+  end
+  def show_progress_percent(_, _, _), do: ""
+
+  @spec show_progress_steps(term, String.t, String.t, String.t) :: String.t
+  def show_progress_steps(term, left \\ "", right \\ "", sep \\ "/")
+  def show_progress_steps(%Progress{step: step, total: total}, left, right, sep) do
+    total_s = to_string(total)
+    step_s = String.pad_leading(to_string(step), String.length(total_s), " ")
+
+    left <> step_s <> sep <> total_s <> right
+  end
+  def show_progress_steps(_, _, _, _), do: ""
+
+  @spec show_progress_time(term, String.t, String.t) :: String.t
+  def show_progress_time(term, left \\ "", right \\ "")
+  def show_progress_time(progress, left, right) when is_struct(progress, Progress),
+      do: maybe(Map.get(progress, :time), &(left <> &1 <> right)) <|> ""
+  def show_progress_time(_, _, _), do: ""
 
   @spec show_progress_bar(float | Progress.t, pos_integer) :: String.t
   def show_progress_bar(progress, progress_width) when is_struct(progress, Progress) do
@@ -101,6 +125,7 @@ defmodule DTask.TUI.Views.TaskCommon do
     progress = round(progress_width * percent)
     String.duplicate(@progress_symbol, progress) <> String.duplicate(" ", progress_width - progress)
   end
+  def show_progress_bar(_, progress_width), do: String.duplicate(" ", progress_width)
 
   @spec show_params(params, sep) :: String.t when params: {atom, term} | term,
                                                   sep: String.t
