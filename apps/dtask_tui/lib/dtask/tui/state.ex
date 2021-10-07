@@ -64,8 +64,8 @@ defmodule DTask.TUI.State do
                       width: non_neg_integer
                     }
 
-    @type layout :: {:split_horizontal, heights :: pos_int_2}
-                  | {:split_vertical,   ratio :: pos_int_2}
+    @type layout :: {:split_horizontal, ratio   :: float}
+                  | {:split_vertical,   heights :: pos_int_2}
                   | :table_only
 
     @type tab :: DTask.TUI.Tab.t

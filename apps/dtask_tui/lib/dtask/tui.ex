@@ -68,9 +68,8 @@ defmodule DTask.TUI do
 
   @default_show_help true
 
-  # TODO: dynamic, depending on window height
-  @default_horizontal_layout {:split_horizontal, {10, :fill}}
-  @default_vertical_layout   {:split_vertical,   {7, 5}}
+  @default_horizontal_layout {:split_horizontal, 0.5}
+  @default_vertical_layout   {:split_vertical, {7, 5}}
 
   @layout_wide_threshold 120
   @default_wide_layout   @default_vertical_layout
