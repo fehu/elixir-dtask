@@ -2,7 +2,6 @@ defmodule DTask.TUI.Render.Details do
   @moduledoc false
 
   alias DTask.TUI
-  alias Ratatouille.Constants
   alias Ratatouille.Renderer.Element
 
   @callback render_details(TUI.state, term) :: Element.t
@@ -11,6 +10,7 @@ defmodule DTask.TUI.Render.Details do
   defmacro __using__(_) do
     quote do
       # # # # # Quoted # # # # #
+      alias Ratatouille.Constants
       import Ratatouille.View
 
       @behaviour TUI.Render
@@ -36,6 +36,10 @@ defmodule DTask.TUI.Render.Details do
         panel title: "Inspect", height: :fill do
           label(content: inspect(x, pretty: true, width: 0))
         end
+      end
+
+      defp main_height(state) do
+        state.ui.window.height - state.ui.const_height_f.(state)
       end
 
       defoverridable render_empty: 1

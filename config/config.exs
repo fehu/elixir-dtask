@@ -37,7 +37,8 @@ config :dtask_runner,
 config :dtask_tui,
        master_node: master_node,
        tui_node_prefix: tui_node_prefix,
-       resource_report_timeout_millis: 1_500
+       resource_report_timeout_millis: 1_500,
+       resource_usage_hist_limit: 60
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

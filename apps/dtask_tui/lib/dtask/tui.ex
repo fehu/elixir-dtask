@@ -22,7 +22,7 @@ defmodule DTask.TUI do
       data_key: Views.ExecutorsTable.data_key,
       shortcuts: [?e, ?E],
       render_main: Views.ExecutorsTable,
-      render_side: Views.DetailsPanel
+      render_side: Views.ExecutorDetails
     },
     %Tab{
       id: :tasks_all,
@@ -121,6 +121,7 @@ defmodule DTask.TUI do
         connected: connected
       },
       data: %State.Data{
+        resource_usage_hist_limit: cfg.resource_usage_hist_limit,
         test: Enum.to_list(1..100)
       },
       ui: %State.UI{
@@ -160,7 +161,10 @@ defmodule DTask.TUI do
 
   @impl true
   def update(state, {{:refreshed, key}, data}) do
-    state |> put_in([:data, key], data)
+    new_state_0 = state |> put_in([:data, key], data)
+    if key == :resource_usage,
+       do: new_state_0 |> update_resource_usage_hist(data),
+       else: new_state_0
   end
 
   # Events
@@ -199,4 +203,15 @@ defmodule DTask.TUI do
   @spec render(state) :: Element.t
   defdelegate render(state), to: Views.MainView
 
+
+  # # # Private functions # # #
+
+  defp update_resource_usage_hist(state, data) do
+    update_in state.data.resource_usage_hist, fn hist ->
+      tail = if length(hist) >= state.data.resource_usage_hist_limit,
+                do: List.delete_at(hist, -1),
+                else: hist
+      [data | tail]
+    end
+  end
 end

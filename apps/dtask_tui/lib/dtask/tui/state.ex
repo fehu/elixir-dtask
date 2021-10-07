@@ -37,14 +37,17 @@ defmodule DTask.TUI.State do
   defmodule Data do
     use StructAccess
 
-    defstruct [:test, :tasks, :resource_usage]
+    @enforce_keys [:resource_usage_hist_limit]
+    defstruct     [:resource_usage_hist_limit, :resource_usage, :tasks, :test, resource_usage_hist: []]
 
     @type tasks :: DTask.Task.Monitor.state | nil
     @type resource_usage :: DTask.ResourceUsage.Collector.usage | nil
 
     @type t :: %__MODULE__{
-                 tasks: tasks,
                  resource_usage: resource_usage,
+                 resource_usage_hist: [resource_usage],
+                 resource_usage_hist_limit: non_neg_integer,
+                 tasks: tasks,
                  test: [integer]
                }
   end

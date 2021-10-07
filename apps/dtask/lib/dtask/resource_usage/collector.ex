@@ -4,7 +4,9 @@ defmodule DTask.ResourceUsage.Collector do
   use GenServer
   require Logger
 
-  @type usage :: %{node => term}
+  @type usage0 :: %{Extractor.t => Extractor.usage}
+  @type usage       :: %{node => usage0 | :dead}
+  @type usage_tuple ::  {node,   usage0 | :dead}
 
   @spec start_link(non_neg_integer) :: GenServer.on_start
   def start_link(dead_timeout_millis) do
