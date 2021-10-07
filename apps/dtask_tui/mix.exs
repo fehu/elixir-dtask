@@ -28,8 +28,7 @@ defmodule DTask.App.Tui.MixProject do
   defp deps do
     [
       {:dtask, in_umbrella: true},
-      {:ratatouille, "~> 0.5.1"},
-      {:struct_access, "~> 1.1.2"}
+      {:ratatouille, "~> 0.5.1"}
     ]
   end
 end

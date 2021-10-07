@@ -7,24 +7,33 @@ defmodule DTask.Task.Monitor do
   use GenServer
   require Logger
 
-  @typep task_running  :: %{
-                            node: node,
-                            progress: term,
-                            dispatched: DateTime
-                          }
-  @typep task_finished :: %{
-                            node: node,
-                            outcome: {:success, term} | {:failure, term},
-                            dispatched: DateTime,
-                            finished: DateTime
-                          }
-  @typep task_state :: :pending
-                     | {:running, task_running}
-                     | {:finished, task_finished}
-  @type state :: %{
-                   def_of: %{Dispatcher.task_id => Dispatcher.task_descriptor},
-                   state_of: %{Dispatcher.task_id => task_state}
-                 }
+  defmodule State do
+    use StructAccess
+
+    @enforce_keys [:def_of, :state_of]
+    defstruct     [:def_of, :state_of]
+
+    @typep task_running  :: %{
+                              node: node,
+                              progress: term,
+                              dispatched: DateTime
+                            }
+    @typep task_finished :: %{
+                              node: node,
+                              outcome: {:success, term} | {:failure, term},
+                              dispatched: DateTime,
+                              finished: DateTime
+                            }
+    @typep task_state :: :pending
+                         | {:running, task_running}
+                         | {:finished, task_finished}
+    @type t :: %__MODULE__{
+                 def_of: %{Dispatcher.task_id => Dispatcher.task_descriptor},
+                 state_of: %{Dispatcher.task_id => task_state}
+               }
+  end
+
+  @type state :: State.t
 
   @spec start_link(Dispatcher.server | nil) :: GenServer.on_start
   def start_link(dispatcher) do
@@ -179,7 +188,7 @@ defmodule DTask.Task.Monitor do
         }}}
       end
 
-    %{
+    %State{
       def_of: def_of_all,
       state_of: state_of_all
     }

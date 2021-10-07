@@ -21,7 +21,8 @@ defmodule DTask.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-       {:dialyxir, "~> 1.1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.1.0", only: [:dev], runtime: false},
+      {:struct_access, "~> 1.1.2"}
     ]
   end
 end
