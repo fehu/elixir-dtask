@@ -54,4 +54,8 @@ defmodule DTask.TUI.Update do
           |> put_in([:ui, :table], %State.UI.Table{})
   end
 
+  @spec layout(State.t, State.UI.layout) :: State.t
+  def layout(state, layout),
+      do: put_in(state.ui.layout, layout)
+
 end

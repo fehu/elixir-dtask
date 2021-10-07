@@ -67,10 +67,24 @@ defmodule DTask.TUI do
   @default_tab @tabs_map[:executors]
 
   @default_show_help true
-  @layout_wide_threshold 120
-  @default_wide_layout   {:split_vertical, {7, 5}}
+
   # TODO: dynamic, depending on window height
-  @default_narrow_layout {:split_horizontal, {10, :fill}}
+  @default_horizontal_layout {:split_horizontal, {10, :fill}}
+  @default_vertical_layout   {:split_vertical,   {7, 5}}
+
+  @layout_wide_threshold 120
+  @default_wide_layout   @default_vertical_layout
+  @default_narrow_layout @default_horizontal_layout
+
+  @layout_keys_map %{
+    ?h => @default_horizontal_layout,
+    ?H => @default_horizontal_layout,
+    ?v => @default_vertical_layout,
+    ?V => @default_vertical_layout,
+    ?w => :table_only,
+    ?W => :table_only
+  }
+  @layout_keys Map.keys(@layout_keys_map)
 
   @tick_millis 1_000
 
@@ -154,14 +168,15 @@ defmodule DTask.TUI do
   def update(state, {:event, event}) do
     case event do
       # Move cursor
-      %{key: @key_arrow_up}        -> state |> Update.move_cursor(:y, :-)
-      %{key: @key_arrow_down}      -> state |> Update.move_cursor(:y, :+)
-      %{key: @key_arrow_left}      -> state |> Update.move_cursor(:x, :-)
-      %{key: @key_arrow_right}     -> state |> Update.move_cursor(:x, :+)
-      %{key: @key_home}            -> state |> Update.move_cursor(:y, 0)    |> Update.move_cursor(:x, 0)
-      %{key: @key_end}             -> state |> Update.move_cursor(:y, :max) |> Update.move_cursor(:x, 0)
-      %{ch: c} when c in @tab_keys -> state |> Update.tab(@tab_keys_map[c])
-      _                            -> state
+      %{key: @key_arrow_up}           -> state |> Update.move_cursor(:y, :-)
+      %{key: @key_arrow_down}         -> state |> Update.move_cursor(:y, :+)
+      %{key: @key_arrow_left}         -> state |> Update.move_cursor(:x, :-)
+      %{key: @key_arrow_right}        -> state |> Update.move_cursor(:x, :+)
+      %{key: @key_home}               -> state |> Update.move_cursor(:y, 0)    |> Update.move_cursor(:x, 0)
+      %{key: @key_end}                -> state |> Update.move_cursor(:y, :max) |> Update.move_cursor(:x, 0)
+      %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
+      %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
+      _                               -> state
     end
   end
 
