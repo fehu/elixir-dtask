@@ -10,7 +10,7 @@ defmodule DTask.TUI.Views.TaskDetails do
   @pending_label TaskCommon.pending_label |> String.capitalize
   @pending_color TaskCommon.pending_color
   @running_label TaskCommon.running_label |> String.capitalize
-  @running_color TaskCommon.running_color
+  @running_color Constants.color(:green)
   @success_label TaskCommon.success_label |> String.capitalize
   @success_color TaskCommon.success_color
   @failure_label TaskCommon.failure_label |> String.capitalize
