@@ -2,6 +2,7 @@ defmodule DTask.TUI.Views.TasksTable do
   @moduledoc false
 
   alias DTask.Task.{Dispatcher, Monitor}
+  alias DTask.TUI
 
   use DTask.TUI.Render.Table
 
@@ -71,16 +72,16 @@ defmodule DTask.TUI.Views.TasksTable do
       {:running,  s} ->
         {
           @running_color,
-          show_time(s.dispatched),
+          show_timestamp(s.dispatched),
           show_progress(s),
           ""
         }
       {:finished, s=%{outcome: {outcome, _}}} ->
         {
           if(outcome == :success, do: @success_color, else: @failure_color),
-          show_time(s.dispatched),
+          show_timestamp(s.dispatched),
           if(outcome == :success, do: @success_label, else: @failure_label),
-          show_time(s.finished)
+          show_timestamp(s.finished)
         }
     end
     style_0 = if selected?, do: @row_selected_style, else: @row_style
@@ -93,7 +94,13 @@ defmodule DTask.TUI.Views.TasksTable do
     end
   end
 
-  defp show_time(time), do: DateTime.to_string(time)
+  defp show_timestamp(timestamp) do
+    %DateTime{month: month, day: day, hour: hour, minute: min, second: sec} =
+      TUI.Util.shift_time_zone(timestamp)
+    l2 = &String.pad_leading(to_string(&1), 2, "0")
+
+    "#{l2.(day)}/#{l2.(month)} #{l2.(hour)}:#{l2.(min)}:#{l2.(sec)}"
+  end
 
   defp show_progress(%{label: label, percent: percent, step: step, total: total, time: time}) do
     "#{label}: [#{show_progress_bar(percent)}] #{step}/#{total} (#{time})"
