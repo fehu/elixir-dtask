@@ -36,10 +36,6 @@ defmodule DTask.TUI.Views.TasksTable do
 
   @type row :: {Dispatcher.task_id, {Dispatcher.task_descriptor, Monitor.task_state}}
 
-  @spec count_data(term) :: non_neg_integer
-  def count_data(data),
-      do: 1 + Enum.max(Map.keys(data.def_of), fn -> -1 end)
-
   @impl true
   @spec table_title :: String.t
   def table_title, do: @table_title
@@ -47,11 +43,6 @@ defmodule DTask.TUI.Views.TasksTable do
   @impl true
   @spec data_key :: atom
   def data_key, do: @data_key
-
-  @impl true
-  def prepare_data(data),
-      do: Map.merge(data.def_of, data.state_of, fn _, x, y -> {x, y} end)
-          |> Enum.sort_by(&elem(&1, 0))
 
   @impl true
   @spec render_header(TUI.state, any) :: Element.t

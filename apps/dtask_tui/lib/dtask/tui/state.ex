@@ -40,8 +40,8 @@ defmodule DTask.TUI.State do
     @enforce_keys [:resource_usage_hist_limit]
     defstruct     [:resource_usage_hist_limit, :resource_usage, :tasks, :test, resource_usage_hist: []]
 
-    @type tasks :: DTask.Task.Monitor.state | nil
-    @type resource_usage :: DTask.ResourceUsage.Collector.usage | nil
+    @type tasks :: [{Dispatcher.task_id, {Dispatcher.task_descriptor, Monitor.task_state}}] | nil
+    @type resource_usage :: [DTask.ResourceUsage.Collector.usage_tuple] | nil
 
     @type t :: %__MODULE__{
                  resource_usage: resource_usage,

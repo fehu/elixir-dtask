@@ -61,7 +61,7 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   @spec render_hist(TUI.state, node) :: [(height -> Element.t)] when height: pos_integer
   def render_hist(state, node) do
     hist = state.data.resource_usage_hist
-           |> Stream.map(&Map.get(&1, node, :dead))
+           |> Stream.map(&Keyword.get(&1, node, :dead))
            |> Enum.filter(&(&1 != :dead))
 
     Enum.flat_map @charts, fn {label, keys} ->

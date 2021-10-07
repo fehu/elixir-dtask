@@ -1,7 +1,7 @@
 defmodule DTask.TUI do
   @moduledoc false
 
-  alias DTask.TUI.{State, Update, Views}
+  alias DTask.TUI.{Data, State, Update, Views}
   alias DTask.TUI.Tab
 
   alias Ratatouille.Constants
@@ -29,8 +29,7 @@ defmodule DTask.TUI do
       data_key: Views.TasksTable.data_key,
       shortcuts: [?t, ?T],
       render_main: Views.TasksTable,
-      render_side: Views.DetailsPanel,
-      count_data: &Views.TasksTable.count_data/1
+      render_side: Views.DetailsPanel
     },
     %Tab{
       id: :tasks_running,
@@ -164,7 +163,8 @@ defmodule DTask.TUI do
   # Refresh data
 
   @impl true
-  def update(state, {{:refreshed, key}, data}) do
+  def update(state, {{:refreshed, key}, data0}) do
+    data = Data.save(data0)
     new_state_0 = state |> put_in([:data, key], data)
     if key == :resource_usage,
        do: new_state_0 |> update_resource_usage_hist(data),

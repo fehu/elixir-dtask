@@ -35,13 +35,7 @@ defmodule DTask.TUI.Update do
                                    or op == :max
                                    or (is_integer(op) and op > 0) do
     data = state.data[state.ui.tab.data_key]
-    max = if data do
-            if state.ui.tab.count_data,
-               do: state.ui.tab.count_data.(data),
-               else: Enum.count(data)
-          else
-            0
-          end
+    max = if data, do: Enum.count(data), else: 0
     cursor = fn -> state.ui.table.cursor end
     {cond, upd_state} = case op do
       :+   -> {cursor.() < max - 1, fn -> update_in(state.ui.table.cursor, &(&1 + 1)) end}

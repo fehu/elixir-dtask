@@ -54,7 +54,7 @@ defmodule DTask.TUI.Render.Table do
       def pre_render(state), do: nil
 
       @impl TUI.Render.Table
-      def prepare_data(data), do: data
+      def prepare_data(data), do: Enum.sort_by(data, &elem(&1, 0))
 
       @impl TUI.Render.Table
       @spec slice_data(TUI.state, pos_integer, term) :: [term]
