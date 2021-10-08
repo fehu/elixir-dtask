@@ -2,6 +2,7 @@ defmodule DTask.TUI.Render.Table do
   @moduledoc false
 
   alias DTask.TUI
+  alias DTask.TUI.Tab
   alias DTask.TUI.Views.MainView
 
   @typep cached :: term
@@ -37,7 +38,7 @@ defmodule DTask.TUI.Render.Table do
           table do
             render_header(state, cached)
             for {row, index} <- slice_data(state, n_rows, cached) do
-              render_row(row, cached, index == state.ui.table.cursor)
+              render_row(row, cached, index == Tab.cursor(state, :y))
             end
           end
         end
@@ -59,7 +60,8 @@ defmodule DTask.TUI.Render.Table do
             data = prepare_data(data_0)
             n_data = Enum.count(data)
             half_rows = round(n_rows / 2)
-            offset = case state.ui.table.cursor do
+            offset = case Tab.cursor(state, :y) do
+              nil                           -> 0
               n when n < half_rows          -> 0
               n when n > n_data - half_rows -> n_data - n_rows
               n                             -> n - half_rows

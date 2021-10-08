@@ -4,7 +4,6 @@ defmodule DTask.TUI do
   alias DTask.TUI.{Data, State, Update, Views}
   alias DTask.TUI.Tab
 
-  alias Ratatouille.Constants
   alias Ratatouille.Renderer.Element
   alias Ratatouille.Runtime.{Command, Subscription}
 
@@ -22,14 +21,16 @@ defmodule DTask.TUI do
       data_key: Views.ExecutorsTable.data_key,
       shortcuts: [?e, ?E],
       render_main: Views.ExecutorsTable,
-      render_side: Views.ExecutorDetails
+      render_side: Views.ExecutorDetails,
+      stateful: [Tab.Stateful.Cursor]
     },
     %Tab{
       id: :tasks_all,
       data_key: Views.TasksTable.data_key,
       shortcuts: [?t, ?T],
       render_main: Views.TasksTable,
-      render_side: Views.TaskDetails
+      render_side: Views.TaskDetails,
+      stateful: [Tab.Stateful.Cursor]
     },
     %Tab{
       id: :tasks_running,
@@ -87,13 +88,6 @@ defmodule DTask.TUI do
 
   @tick_millis 1_000
 
-  @key_arrow_up    Constants.key(:arrow_up)
-  @key_arrow_down  Constants.key(:arrow_down)
-  @key_arrow_left  Constants.key(:arrow_left)
-  @key_arrow_right Constants.key(:arrow_right)
-  @key_home        Constants.key(:home)
-  @key_end         Constants.key(:end)
-
   @impl true
   @spec init(map()) :: state | {state, Command.t()}
   def init(context) do
@@ -115,7 +109,7 @@ defmodule DTask.TUI do
 
     # State
 
-    %State{
+    state = %State{
       connection: %State.Connection{
         this_node: Node.self(),
         this_node_up: Node.alive?,
@@ -131,10 +125,10 @@ defmodule DTask.TUI do
         window: context.window,
         layout: layout,
         tab: @default_tab,
-        table: %State.UI.Table{},
         show_help: @default_show_help
       }
     }
+    |> Tab.init
   end
 
   # # # Update # # #
@@ -173,16 +167,15 @@ defmodule DTask.TUI do
   # Events
   def update(state, {:event, event}) do
     case event do
-      # Move cursor
-      %{key: @key_arrow_up}           -> state |> Update.move_cursor(:y, :-)
-      %{key: @key_arrow_down}         -> state |> Update.move_cursor(:y, :+)
-      %{key: @key_arrow_left}         -> state |> Update.move_cursor(:x, :-)
-      %{key: @key_arrow_right}        -> state |> Update.move_cursor(:x, :+)
-      %{key: @key_home}               -> state |> Update.move_cursor(:y, 0)    |> Update.move_cursor(:x, 0)
-      %{key: @key_end}                -> state |> Update.move_cursor(:y, :max) |> Update.move_cursor(:x, 0)
       %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
       %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
-      _                               -> state
+      # Tab reactions
+      _ ->
+        tab_stateful = state.ui.tab.stateful
+        react = if tab_stateful, do: Map.get(tab_stateful.react, event)
+        if react,
+           do: update_in(state.ui.tab.stateful, react.(state)),
+           else: state
     end
   end
 

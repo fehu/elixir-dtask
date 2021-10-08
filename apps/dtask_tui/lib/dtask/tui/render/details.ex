@@ -2,6 +2,7 @@ defmodule DTask.TUI.Render.Details do
   @moduledoc false
 
   alias DTask.TUI
+  alias DTask.TUI.Tab
   alias Ratatouille.Renderer.Element
 
   @callback render_details(TUI.state, term) :: Element.t
@@ -20,7 +21,9 @@ defmodule DTask.TUI.Render.Details do
       @spec render(TUI.state) :: Element.t
       def render(state) do
         data = state.data[state.ui.tab.data_key]
-        selected = if data, do: Enum.at(data, state.ui.table.cursor)
+        cursor_y = Tab.cursor(state, :y)
+        selected = if not is_nil(data) and not is_nil(cursor_y),
+                      do: Enum.at(data, cursor_y)
 
         if selected, do: render_details(state, selected), else: render_empty(state)
       end

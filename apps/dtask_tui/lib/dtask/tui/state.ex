@@ -57,8 +57,8 @@ defmodule DTask.TUI.State do
   defmodule UI do
     use StructAccess
 
-    @enforce_keys [:window, :layout, :tab, :table, :show_help]
-    defstruct     [:window, :layout, :tab, :table, :show_help]
+    @enforce_keys [:window, :layout, :tab, :show_help]
+    defstruct     [:window, :layout, :tab, :show_help]
 
     @typep pos_int_2 :: {pos_integer, pos_integer}
 
@@ -73,27 +73,13 @@ defmodule DTask.TUI.State do
 
     @type tab :: DTask.TUI.Tab.t
 
-    @type table :: __MODULE__.Table.t
-
     @type t :: %__MODULE__{
                  window: window,
                  layout: layout,
                  tab: tab,
-                 table: table,
                  show_help: boolean
                }
 
-    # # # # # # # # # # # # # # # # # # # #
-
-    defmodule Table do
-      use StructAccess
-
-      defstruct [cursor: 0]
-
-      @type t :: %__MODULE__{
-                   cursor: non_neg_integer
-                 }
-    end
   end
 
 end
