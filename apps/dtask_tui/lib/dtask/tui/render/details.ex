@@ -23,7 +23,7 @@ defmodule DTask.TUI.Render.Details do
         data = state.data[state.ui.tab.data_key]
         cursor_y = Tab.cursor(state, :y)
         selected = if not is_nil(data) and not is_nil(cursor_y),
-                      do: Enum.at(data, cursor_y)
+                      do: Enum.at(Enum.sort_by(data, &elem(&1, 0)), cursor_y)
 
         if selected, do: render_details(state, selected), else: render_empty(state)
       end
