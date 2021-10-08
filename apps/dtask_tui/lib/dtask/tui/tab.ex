@@ -47,6 +47,8 @@ defmodule DTask.TUI.Tab do
     @key_arrow_down  Constants.key(:arrow_down)
     @key_arrow_left  Constants.key(:arrow_left)
     @key_arrow_right Constants.key(:arrow_right)
+    @key_page_up     Constants.key(:pgup)
+    @key_page_down   Constants.key(:pgdn)
     @key_home        Constants.key(:home)
     @key_end         Constants.key(:end)
 
@@ -55,6 +57,8 @@ defmodule DTask.TUI.Tab do
       %{key: @key_arrow_down}  => [{:move, [:y, :+]}],
       %{key: @key_arrow_left}  => [{:move, [:x, :-]}],
       %{key: @key_arrow_right} => [{:move, [:x, :+]}],
+      %{key: @key_page_up}     => [{:move, [:y, :--]}],
+      %{key: @key_page_down}   => [{:move, [:y, :++]}],
       %{key: @key_home}        => [{:move, [:y, 0]},    {:move, [:x, 0]}],
       %{key: @key_end}         => [{:move, [:y, :max]}, {:move, [:x, 0]}]
     }
