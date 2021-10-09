@@ -1,9 +1,9 @@
-defmodule Dtask.Task.Serde.MixProject do
+defmodule DTask.Task.Codec.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :dtask_serde,
+      app: :dtask_codec,
       version: "0.2.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
