@@ -79,40 +79,41 @@ defmodule DTask.Data.Repr do
                   | {:error, term}
                   | {:failed, [from_out]}
 
-  @spec from(t) :: from_out
-  def from(a) when is_boolean(a) or is_binary(a) or is_nil(a) or is_number(a),
+  @spec from_repr(t) :: from_out
+  def from_repr(a) when is_boolean(a) or is_binary(a) or is_nil(a) or is_number(a),
       do: {:ok, a}
 
-  def from(%__MODULE__{type: :atom, self: a}),
+  def from_repr(%__MODULE__{type: :atom, self: a}),
       do: {:ok, String.to_atom(a)}
 
-  def from(%__MODULE__{type: :list, children: elems}),
-      do: collect(elems, &from/1)
+  def from_repr(%__MODULE__{type: :list, children: elems}),
+      do: collect(elems, &from_repr/1)
 
-  def from(%__MODULE__{type: :map, children: entries}) do
-    with {:ok, list}  <- collect(entries, &from/1),
+  def from_repr(%__MODULE__{type: :map, children: entries}) do
+    with {:ok, list}  <- collect(entries, &from_repr/1),
          {:ok, pairs} <- collect(list, &safe_pair/1),
       do: {:ok, Map.new(pairs)}
   end
 
-  def from(%__MODULE__{type: :struct, children: [name | fields]}) when is_binary(name) do
-    with {:ok, map} <- from(%__MODULE__{type: :map, children: fields}),
+  def from_repr(%__MODULE__{type: :struct, children: [name | fields]})
+      when is_binary(name) do
+    with {:ok, map} <- from_repr(%__MODULE__{type: :map, children: fields}),
       do: safe_struct(name, map)
   end
 
-  def from(%__MODULE__{type: :tuple, children: elems}) do
-    with {:ok, list} <- collect(elems, &from/1),
+  def from_repr(%__MODULE__{type: :tuple, children: elems}) do
+    with {:ok, list} <- collect(elems, &from_repr/1),
       do: {:ok, List.to_tuple(list)}
   end
 
-  def from(%__MODULE__{type: :function, children: [mod, name, arity]})
+  def from_repr(%__MODULE__{type: :function, children: [mod, name, arity]})
       when is_binary(mod) and is_binary(name) and is_integer(arity),
       do: {:ok, Function.capture(String.to_atom(mod), String.to_atom(name), arity)}
 
-  def from(%__MODULE__{type: t, self: inspect}) when t in @transient,
+  def from_repr(%__MODULE__{type: t, self: inspect}) when t in @transient,
       do: {:ok, %__MODULE__.Transient{type: t, inspect: inspect}}
 
-  def from(other),
+  def from_repr(other),
       do: {:error, {:unsupported, other}}
 
   defp collect(coll, f) do
@@ -138,8 +139,8 @@ defmodule DTask.Data.Repr do
   defp safe_pair(t={_, _}), do: {:ok, t}
   defp safe_pair(other),    do: {:error, "Not a pair: #{inspect other}"}
 
-  @spec to(term) :: t
-  def to(x), do: make_repr(type(x), x)
+  @spec to_repr(term) :: t
+  def to_repr(x), do: make_repr(type(x), x)
 
   @spec type(term) :: type
   def type(x), do: @type_checks |> Enum.find(fn {_, test} -> test.(x) end) |> elem(0)
@@ -151,9 +152,9 @@ defmodule DTask.Data.Repr do
          to_string(s.__struct__)
          | make_repr(:map, Map.from_struct(s)).children])
   defp make_repr(:atom, a),    do: leaf(:atom,  a |> Atom.to_string)
-  defp make_repr(:list, l),    do: node(:list,  l |> Enum.map(&to/1))
+  defp make_repr(:list, l),    do: node(:list,  l |> Enum.map(&to_repr/1))
   defp make_repr(:map, m),     do: node(:map,   m |> Enum.map(&make_repr(:tuple, &1)))
-  defp make_repr(:tuple, t),   do: node(:tuple, t |> Tuple.to_list |> Enum.map(&to/1))
+  defp make_repr(:tuple, t),   do: node(:tuple, t |> Tuple.to_list |> Enum.map(&to_repr/1))
   defp make_repr(:function, f) do
     info = Function.info(f)
     case info[:type] do

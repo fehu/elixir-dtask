@@ -40,8 +40,8 @@ defmodule DTask.Data.ReprTest do
 
   test "convert persistent data to `Repr` and back" do
     for example <- @test_cases do
-      repr = Repr.to(example)
-      assert Repr.from(repr) === {:ok, example}
+      repr = Repr.to_repr(example)
+      assert Repr.from_repr(repr) === {:ok, example}
     end
   end
 
@@ -53,8 +53,8 @@ defmodule DTask.Data.ReprTest do
       {:reference, "#Reference<", make_ref()}
     ]
     for {type, inspect_pref, example} <- test_cases do
-      repr = Repr.to(example)
-      {:ok, t=%Transient{}} = Repr.from(repr)
+      repr = Repr.to_repr(example)
+      {:ok, t=%Transient{}} = Repr.from_repr(repr)
       assert t.type === type
       assert String.starts_with?(t.inspect, inspect_pref)
     end
