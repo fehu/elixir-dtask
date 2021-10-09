@@ -16,11 +16,12 @@ defmodule DTask.Data.Repr do
   # # # # # # # # # # # # # # # # # # # #
 
   alias DTask.Util.ReprUtils, as: Utils
+  import Utils, only: [collect: 2]
 
   @enforce_keys [:type]
   defstruct     [:type, :children, :self]
 
-  @type atomic :: boolean | binary | nil | number
+  @type t :: t_node | t_leaf
 
   @typep t_leaf :: atomic
                  | %__MODULE__{
@@ -31,7 +32,8 @@ defmodule DTask.Data.Repr do
                      type: type,
                      children: [t, ...]
                    }
-  @type t :: t_node | t_leaf
+
+  @type atomic :: boolean | binary | nil | number
 
   @type type :: :atom
               | :boolean
@@ -74,13 +76,19 @@ defmodule DTask.Data.Repr do
   @atomic    [:boolean, :binary, :nil, :number]
   @transient [:lambda, :pid, :port, :reference]
 
+
+  defguard is_atomic(a) when is_boolean(a)
+                          or is_binary(a)
+                          or is_nil(a)
+                          or is_number(a)
+
+
   @type from_out :: {:ok, term}
                   | {:ok, __MODULE__.Transient.t}
-                  | {:error, term}
-                  | {:failed, [from_out]}
+                  | {:error, term | [from_out]}
 
   @spec from_repr(t) :: from_out
-  def from_repr(a) when is_boolean(a) or is_binary(a) or is_nil(a) or is_number(a),
+  def from_repr(a) when is_atomic(a),
       do: {:ok, a}
 
   def from_repr(%__MODULE__{type: :atom, self: a}),
@@ -116,21 +124,9 @@ defmodule DTask.Data.Repr do
   def from_repr(other),
       do: {:error, {:unsupported, other}}
 
-  defp collect(coll, f) do
-    result = Enum.map(coll, &f.(&1))
-    has_error? = Enum.any? result, fn
-      {:error, _}  -> true
-      {:failed, _} -> true
-      _            -> false
-    end
-    unless has_error?,
-           do: {:ok, Enum.map(result, &elem(&1, 1))},
-           else: {:failed, result}
-  end
-
   defp safe_struct(name, fields) do
     try do
-      {:ok, struct(String.to_atom(name), fields)}
+      {:ok, struct!(String.to_atom(name), fields)}
     rescue
       e -> {:error, e}
     end

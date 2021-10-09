@@ -25,7 +25,9 @@ defmodule DTask.Task.Codec.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:dtask, in_umbrella: true}
+      {:dtask, in_umbrella: true},
+      {:jason, "~> 1.2"},
+      {:stream_data, "~> 0.5", only: [:test]}
     ]
   end
 end
