@@ -214,4 +214,11 @@ defmodule DTask.TUI.Views.MainView do
       _                          -> state.ui.window.width
     end
   end
+
+  defmodule TableCursor do
+    use Views.Stateful.Cursor
+
+    @spec max_y_view(TUI.state) :: non_neg_integer
+    defdelegate max_y_view(state), to: Views.MainView, as: :table_rows
+  end
 end

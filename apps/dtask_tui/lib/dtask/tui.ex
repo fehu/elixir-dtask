@@ -22,7 +22,7 @@ defmodule DTask.TUI do
       shortcuts: [?e, ?E],
       render_main: Views.ExecutorsTable,
       render_side: Views.ExecutorDetails,
-      stateful: [Views.Stateful.Cursor.MainViewTable]
+      stateful: [Views.MainView.TableCursor]
     },
     %Tab{
       id: :tasks_all,
@@ -30,7 +30,7 @@ defmodule DTask.TUI do
       shortcuts: [?t, ?T],
       render_main: Views.TasksTable,
       render_side: Views.TaskDetails,
-      stateful: [Views.Stateful.Cursor.MainViewTable]
+      stateful: [Views.MainView.TableCursor]
     },
     %Tab{
       id: :tasks_running,

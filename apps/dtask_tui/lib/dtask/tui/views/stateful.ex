@@ -150,11 +150,3 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
   end
 
 end
-
-
-defmodule DTask.TUI.Views.Stateful.Cursor.MainViewTable do
-  use DTask.TUI.Views.Stateful.Cursor
-
-  @spec max_y_view(TUI.state) :: non_neg_integer
-  defdelegate max_y_view(state), to: DTask.TUI.Views.MainView, as: :table_rows
-end
