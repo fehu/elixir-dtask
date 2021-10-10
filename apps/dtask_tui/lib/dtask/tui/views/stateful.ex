@@ -27,6 +27,11 @@ defmodule DTask.TUI.Views.Stateful do
       end)
     }
   end
+
+  # # # Behaviour # # #
+
+  @callback state_key :: atom
+  @callback stateful() :: t
 end
 
 defmodule DTask.TUI.Views.Stateful.Cursor do
@@ -45,8 +50,6 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
   alias ExTermbox.Event
   alias Ratatouille.Constants
 
-  import DTask.Util.Syntax, only: [<|>: 2]
-
   @type state :: __MODULE__.State.t
 
   @typep axis :: :x | :y
@@ -63,8 +66,13 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
 
   @callback move(axis, op) :: (TUI.state, state -> state)
 
+  @behaviour TUI.Views.Stateful
   @callback state_key :: atom
   @callback stateful :: TUI.Views.Stateful.t
+
+  @behaviour TUI.Render.Dimensions
+  @callback max_x_view(TUI.state) :: non_neg_integer
+  @callback max_y_view(TUI.state) :: non_neg_integer
 
   defmacro __using__(_opts) do
     quote do
@@ -72,7 +80,6 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
       alias TUI.Views.Stateful.Cursor
 
       @behaviour Cursor
-      @behaviour TUI.Render.Dimensions
 
       @key_arrow_up    Constants.key(:arrow_up)
       @key_arrow_down  Constants.key(:arrow_down)
