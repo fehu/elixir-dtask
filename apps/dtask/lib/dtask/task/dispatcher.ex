@@ -166,6 +166,14 @@ defmodule DTask.Task.Dispatcher do
     {:reply, state.tasks.finished, state}
   end
 
+  # Safeguard
+
+  @impl true
+  def handle_call(msg, from, state) do
+    Logger.info("Unhandled call from #{inspect from}: #{inspect msg}")
+    {:noreply, state}
+  end
+
   # Task dispatch
 
   @impl true
@@ -231,10 +239,22 @@ defmodule DTask.Task.Dispatcher do
     end
   end
 
+  # Safeguard
+
+  @impl true
+  def handle_info(msg, state) do
+    Logger.info("Unhandled info: #{inspect msg}")
+    {:noreply, state}
+  end
+
   # Commands
 
   @impl true
-  def handle_cast({:add_tasks, tasks}, state) do
+  def handle_cast({:add_tasks, tasks_0}, state) when is_list(tasks_0) do
+    {tasks, rejected} = Enum.split_with(tasks_0, fn
+      {mod, _} -> is_atom(mod)
+      _        -> false
+    end)
     {next_id, new_state0} = Map.get_and_update(state, :next_task_id, &{&1, &1 + length(tasks)})
     new_tasks = Stream.with_index(tasks)
              |> Stream.map(fn {task, i} -> {task, next_id + i} end)
@@ -243,8 +263,12 @@ defmodule DTask.Task.Dispatcher do
     # Notify monitors
     Enum.each(new_tasks, &Monitor.Broadcast.registered/1)
 
+    unless Enum.empty?(rejected), do: Logger.info("Rejected tasks: #{inspect rejected}")
+
     new_state = update_in(new_state0.tasks.pending, &Enum.concat(&1, new_tasks))
-    {:noreply, new_state, {:continue, :dispatch_next}}
+    if Enum.empty?(tasks),
+       do: {:noreply, new_state},
+       else: {:noreply, new_state, {:continue, :dispatch_next}}
   end
 
   # Execution callbacks (used by `DTask.Task.Executor`)
@@ -256,6 +280,14 @@ defmodule DTask.Task.Dispatcher do
     new_state = new_state0 |> update_in([:executors, :busy], &List.delete(&1, node))
                            |> update_in([:executors, :idle], &[node | &1])
     {:noreply, new_state, {:continue, :dispatch_next}}
+  end
+
+  # Safeguard
+
+  @impl true
+  def handle_cast(msg, state) do
+    Logger.info("Unhandled cast: #{inspect msg}")
+    {:noreply, state}
   end
 
   # Private functions
