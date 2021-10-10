@@ -115,14 +115,19 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
 
   @callback move(axis, op) :: (TUI.state, state -> state)
 
-  @behaviour TUI.Views.Stateful
-  @callback state_key :: atom
-  @callback stateful :: TUI.Views.Stateful.t
+  # Optional callbacks
 
-  @behaviour TUI.Render.Dimensions
+  @callback max_x(TUI.state) :: non_neg_integer
+  @callback max_y(TUI.state) :: non_neg_integer
+
   @callback max_x_view(TUI.state) :: non_neg_integer
   @callback max_y_view(TUI.state) :: non_neg_integer
 
+  @optional_callbacks max_x: 1, max_y: 1, max_x_view: 1, max_y_view: 1
+
+  @doc """
+  Requires optional callbacks `max_y: 1` and `max_y_view: 1`.
+  """
   defmacro __using__(_opts) do
     quote do
       # # # # # Quoted # # # # #
@@ -150,8 +155,7 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
       @spec move(Cursor.axis, Cursor.op) :: (TUI.state, Cursor.state -> Cursor.state)
       # Operations that require knowing data size
       def move(:y, op) when op in [:+, :++, :max], do: fn state, s ->
-        data = state.data[state.ui.tab.data_key]
-        max = if data, do: Enum.count(data), else: 0
+        max = max_y(state)
         page = fn -> __MODULE__.max_y_view(state) end
         {cond, upd_s} = case op do
           :+   -> {s.y < max - 1, fn -> update_in(s.y, &(&1 + 1)) end}
