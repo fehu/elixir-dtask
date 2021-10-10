@@ -45,28 +45,39 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
     `lhs` define event to match (key/value pairs),
     `rhs` define functions to call (name and args)
   """
-  defmacro __using__(init: state, bind: react) do
-    [e, s1, s0, s, rhs] = Macro.generate_arguments(5, __MODULE__)
+  defmacro __using__(init: state, bind: {:%{}, _, binds}) do
+    [ev, s0, s1, s2] = Macro.generate_arguments(4, __MODULE__)
+    module  = quote do: __MODULE__
+    clauses = Enum.flat_map binds, fn {{:%{}, _, lhs}, rhs_0} ->
+      apply_rhs = Enum.reduce rhs_0, s0, fn
+        {f, args}, s ->
+          quote do
+            # >> __MODULE__.f(..args..).(TUI.state, state) <<
+            # f return type is expected to be (TUI.state, state -> state)
+            unquote(module).unquote(f)(unquote_splicing(args)).(unquote(s2), unquote(s))
+          end
+      end
+
+      rhs = quote do
+        fn unquote(s1) ->
+          update_in unquote(s1),
+                    [unquote(@state_0_key), __MODULE__.state_key],
+                    fn unquote(s0) -> unquote(apply_rhs) end
+        end
+      end
+
+      quote do: (%Event{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
+    end
+
+    react = {:fn, [], clauses}
+
     quote do
       @behaviour Stateful
 
       @spec stateful() :: Stateful.t
       def stateful, do: %Stateful{
         state: %{state_key() => unquote(state)},
-        react: fn unquote(e), unquote(s1) ->
-          unquote(rhs) = if unquote(e).ch != 0,
-                            do: unquote(react)[%{ch: unquote(e).ch}],
-                            else: unquote(react)[%{key: unquote(e).key}]
-          if unquote(rhs) do
-            fn unquote(s0) ->
-              update_in unquote(s0), [unquote(@state_0_key), __MODULE__.state_key], fn unquote(s) ->
-                unquote(rhs)
-                |> Stream.map(&apply(__MODULE__, elem(&1, 0), elem(&1, 1)))
-                |> Enum.reduce(unquote(s), &(&1.(unquote(s1), &2)))
-              end
-            end
-          end
-        end
+        react: unquote(react)
       }
     end
   end
