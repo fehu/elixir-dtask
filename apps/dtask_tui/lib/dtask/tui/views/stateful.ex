@@ -14,7 +14,7 @@ defmodule DTask.TUI.Views.Stateful do
 
   @type t :: %__MODULE__{
                state: state,
-               react: %{Event.t => (TUI.state -> (state -> state))}
+               react: (Event.t, TUI.state -> (state -> state) | nil)
              }
 
   @spec merge(t, t) :: t
@@ -43,27 +43,29 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
   @doc """
     Bind format: `%{lhs => rhs}` where
     `lhs` define event to match (key/value pairs),
-    `rhs` define function to call (name and args)
+    `rhs` define functions to call (name and args)
   """
   defmacro __using__(init: state, bind: react) do
+    [e, s1, s0, s, rhs] = Macro.generate_arguments(5, __MODULE__)
     quote do
-      @behaviour StatefulStateful
+      @behaviour Stateful
 
       @spec stateful() :: Stateful.t
       def stateful, do: %Stateful{
         state: %{state_key() => unquote(state)},
-        react: for {ev, acts} <- unquote(react),
-                   into: %{} do
-          {struct(Event, Map.put_new(ev, :type, 1)),
-            fn state ->
-              fn s0 ->
-                update_in s0, [unquote(@state_0_key), state_key], fn s ->
-                  Stream.map(acts, fn {fk, args} -> apply(__MODULE__, fk, args) end)
-                  |> Enum.reduce(s, &(&1.(state, &2)))
-                end
+        react: fn unquote(e), unquote(s1) ->
+          unquote(rhs) = if unquote(e).ch != 0,
+                            do: unquote(react)[%{ch: unquote(e).ch}],
+                            else: unquote(react)[%{key: unquote(e).key}]
+          if unquote(rhs) do
+            fn unquote(s0) ->
+              update_in unquote(s0), [unquote(@state_0_key), __MODULE__.state_key], fn unquote(s) ->
+                unquote(rhs)
+                |> Stream.map(&apply(__MODULE__, elem(&1, 0), elem(&1, 1)))
+                |> Enum.reduce(unquote(s), &(&1.(unquote(s1), &2)))
               end
             end
-          }
+          end
         end
       }
     end

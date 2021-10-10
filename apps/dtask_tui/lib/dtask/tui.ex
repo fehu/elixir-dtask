@@ -172,9 +172,9 @@ defmodule DTask.TUI do
       # Tab reactions
       _ ->
         tab_stateful = state.ui.tab.stateful
-        react = if tab_stateful, do: Map.get(tab_stateful.react, event)
+        react = if tab_stateful, do: tab_stateful.react.(event, state)
         if react,
-           do: update_in(state.ui.tab.stateful, react.(state)),
+           do: update_in(state.ui.tab.stateful, react),
            else: state
     end
   end
