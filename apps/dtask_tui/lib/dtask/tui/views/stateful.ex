@@ -3,7 +3,7 @@ defmodule DTask.TUI.Views.Stateful do
 
   alias ExTermbox.Event
 
-  import DTask.Util.Syntax, only: [>>>: 2]
+  import DTask.Util.Syntax, only: [>>>: 2, maybe_2: 3]
 
   use StructAccess
 
@@ -22,9 +22,9 @@ defmodule DTask.TUI.Views.Stateful do
                    and is_struct(y, __MODULE__) do
     %__MODULE__{
       state: Map.merge(x.state, y.state),
-      react: Map.merge(x.react, y.react, fn _, fx, fy ->
-        fn state -> fx.(state) >>> fy.(state) end
-      end)
+      react: fn ev, state ->
+        maybe_2(x.react.(ev, state), y.react.(ev, state), &>>>/2)
+      end
     }
   end
 
