@@ -69,7 +69,9 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
       quote do: (%Event{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
     end
 
-    react = {:fn, [], clauses}
+    default_clauses = quote do: (_, _ -> nil)
+
+    react = {:fn, [], clauses ++ default_clauses}
 
     quote do
       @behaviour Stateful
