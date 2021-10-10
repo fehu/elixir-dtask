@@ -63,8 +63,8 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
 
   @callback move(axis, op) :: (TUI.state, state -> state)
 
-  @callback state_key() :: atom
-  @callback stateful() :: TUI.Views.Stateful.t
+  @callback state_key :: atom
+  @callback stateful :: TUI.Views.Stateful.t
 
   defmacro __using__(_opts) do
     quote do
