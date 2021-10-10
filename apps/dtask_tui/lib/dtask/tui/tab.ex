@@ -3,7 +3,7 @@ defmodule DTask.TUI.Tab do
 
   alias DTask.TUI
   alias DTask.TUI.Render
-  alias DTask.TUI.Views.{MainView, Stateful}
+  alias DTask.TUI.Views.Stateful
 
   use StructAccess
 
@@ -32,8 +32,8 @@ defmodule DTask.TUI.Tab do
       [] ->
         nil
       mods when is_list(mods) ->
-        Stream.map(mods, &(&1.stateful)) |> Enum.reduce(&__MODULE__.Stateful.merge/2)
-      s when is_struct(s, __MODULE__.Stateful) ->
+        Stream.map(mods, &(&1.stateful)) |> Enum.reduce(&Stateful.merge/2)
+      s when is_struct(s, Stateful) ->
         s
       _ -> nil
     end
