@@ -34,6 +34,42 @@ defmodule DTask.TUI.Views.Stateful do
   @callback stateful() :: t
 end
 
+defmodule DTask.TUI.Views.Stateful.Reactive do
+  @state_0_key :state
+
+  alias DTask.TUI.Views.Stateful
+  alias ExTermbox.Event
+
+  @doc """
+    Bind format: `%{lhs => rhs}` where
+    `lhs` define event to match (key/value pairs),
+    `rhs` define function to call (name and args)
+  """
+  defmacro __using__(init: state, bind: react) do
+    quote do
+      @behaviour StatefulStateful
+
+      @spec stateful() :: Stateful.t
+      def stateful, do: %Stateful{
+        state: %{state_key() => unquote(state)},
+        react: for {ev, acts} <- unquote(react),
+                   into: %{} do
+          {struct(Event, Map.put_new(ev, :type, 1)),
+            fn state ->
+              fn s0 ->
+                update_in s0, [unquote(@state_0_key), state_key], fn s ->
+                  Stream.map(acts, fn {fk, args} -> apply(__MODULE__, fk, args) end)
+                  |> Enum.reduce(s, &(&1.(state, &2)))
+                end
+              end
+            end
+          }
+        end
+      }
+    end
+  end
+end
+
 defmodule DTask.TUI.Views.Stateful.Cursor do
   defmodule State do
     use StructAccess
@@ -47,7 +83,6 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
   end
 
   alias DTask.TUI
-  alias ExTermbox.Event
   alias Ratatouille.Constants
 
   @type state :: __MODULE__.State.t
@@ -90,38 +125,21 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
       @key_home        Constants.key(:home)
       @key_end         Constants.key(:end)
 
-      @react %{
-        %{key: @key_arrow_up}    => [{:move, [:y, :-]}],
-        %{key: @key_arrow_down}  => [{:move, [:y, :+]}],
-        %{key: @key_arrow_left}  => [{:move, [:x, :-]}],
-        %{key: @key_arrow_right} => [{:move, [:x, :+]}],
-        %{key: @key_page_up}     => [{:move, [:y, :--]}],
-        %{key: @key_page_down}   => [{:move, [:y, :++]}],
-        %{key: @key_home}        => [{:move, [:y, 0]},    {:move, [:x, 0]}],
-        %{key: @key_end}         => [{:move, [:y, :max]}, {:move, [:x, 0]}]
-      }
-
-      @state_0_key :state
+      use TUI.Views.Stateful.Reactive,
+          init: %Cursor.State{x: 0, y: 0},
+          bind: %{
+            %{key: @key_arrow_up}    => [{:move, [:y, :-]}],
+            %{key: @key_arrow_down}  => [{:move, [:y, :+]}],
+            %{key: @key_arrow_left}  => [{:move, [:x, :-]}],
+            %{key: @key_arrow_right} => [{:move, [:x, :+]}],
+            %{key: @key_page_up}     => [{:move, [:y, :--]}],
+            %{key: @key_page_down}   => [{:move, [:y, :++]}],
+            %{key: @key_home}        => [{:move, [:y, 0]},    {:move, [:x, 0]}],
+            %{key: @key_end}         => [{:move, [:y, :max]}, {:move, [:x, 0]}]
+          }
 
       @spec state_key :: atom
       def state_key, do: :cursor
-
-      @spec stateful() :: TUI.Views.Stateful.t
-      def stateful, do: %TUI.Views.Stateful{
-        state: %{state_key => %Cursor.State{x: 0, y: 0}},
-        react: Stream.map(@react, fn {ev, acts} ->
-          {struct(Event, Map.put_new(ev, :type, 1)),
-            fn state ->
-              fn s0 ->
-                update_in s0, [@state_0_key, state_key], fn s ->
-                  Stream.map(acts, fn {fk, args} -> apply(__MODULE__, fk, args) end)
-                  |> Enum.reduce(s, &(&1.(state, &2)))
-                end
-              end
-            end
-          }
-        end) |> Enum.into(%{})
-      }
 
       @spec move(Cursor.axis, Cursor.op) :: (TUI.state, Cursor.state -> Cursor.state)
       # Operations that require knowing data size
