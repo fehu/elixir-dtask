@@ -40,12 +40,28 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
   alias DTask.TUI.Views.Stateful
   alias ExTermbox.Event
 
+  import DTask.Util.Syntax, only: [<|>: 2]
+
+  @malformed_or "Malformed :or option: literal fun/2 is expected."
+
   @doc """
     Bind format: `%{lhs => rhs}` where
     `lhs` define event to match (key/value pairs),
     `rhs` define functions to call (name and args)
+
+    Required:
+      * `init: state`
+      * `bind`
+    Options:
+      * `or: fn event, state -> (s -> s) | nil end`
   """
-  defmacro __using__(init: state, bind: {:%{}, _, binds}) do
+  defmacro __using__(opts) do
+    init_state = opts[:init] <|> raise "Undefined `:init`"
+    binds = case opts[:bind] do
+      {:%{}, _, binds} -> binds
+      nil              -> raise "Undefined `:bind`"
+      _                -> raise "Malformed `:bind`"
+    end
     [ev, s0, s1, s2] = Macro.generate_arguments(4, __MODULE__)
     module  = quote do: __MODULE__
     clauses = Enum.flat_map binds, fn {{:%{}, _, lhs}, rhs_0} ->
@@ -58,31 +74,51 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
           end
       end
 
-      rhs = quote do
-        fn unquote(s1) ->
-          update_in unquote(s1),
-                    [unquote(@state_0_key), __MODULE__.state_key],
-                    fn unquote(s0) -> unquote(apply_rhs) end
-        end
-      end
+      rhs = update_state_expr s1, quote do: fn unquote(s0) -> unquote(apply_rhs) end
 
       quote do: (%Event{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
     end
 
+    or_clauses = case opts[:or] do
+      {:fn, _, cs} ->
+        Enum.map cs, fn
+          {:->, m0, [lhs=[{_event, _, _}, {_state_v, _, _}], rhs]} ->
+            {:->, m0, [lhs, update_state_expr(s1, rhs)]}
+          {:->, m0, [lhs=[{:when, _, [{_event, _, _}, {_state_v, _, _}, _]}], rhs]} ->
+            {:->, m0, [lhs, update_state_expr(s1, rhs)]}
+          _ ->
+            raise @malformed_or
+        end
+      nil -> []
+      _   -> raise @malformed_or
+    end
+
     default_clauses = quote do: (_, _ -> nil)
 
-    react = {:fn, [], clauses ++ default_clauses}
+    react = {:fn, [], clauses ++ or_clauses ++ default_clauses}
 
     quote do
       @behaviour Stateful
 
+      @impl true
       @spec stateful() :: Stateful.t
       def stateful, do: %Stateful{
-        state: %{state_key() => unquote(state)},
+        state: %{state_key() => unquote(init_state)},
         react: unquote(react)
       }
     end
   end
+
+  defp update_state_expr(v_state, f_expr) do
+    quote do
+      fn unquote(v_state) ->
+        update_in unquote(v_state),
+                  [unquote(@state_0_key), __MODULE__.state_key],
+                  unquote(f_expr)
+      end
+    end
+  end
+
 end
 
 defmodule DTask.TUI.Views.Stateful.Cursor do
@@ -149,9 +185,11 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
             %{key: @end_}        => [{:move, [:y, :max]}, {:move, [:x, 0]}]
           }
 
+      @impl true
       @spec state_key :: atom
       def state_key, do: :cursor
 
+      @impl true
       @spec move(Cursor.axis, Cursor.op) :: (TUI.state, Cursor.state -> Cursor.state)
       # Operations that require knowing data size
       def move(:y, op) when op in [:+, :++, :max], do: fn state, s ->
