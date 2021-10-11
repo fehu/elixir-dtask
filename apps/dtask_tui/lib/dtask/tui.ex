@@ -179,7 +179,8 @@ defmodule DTask.TUI do
     k_s = Keys.space()
     test_overlay = %Overlay{
       id: :test,
-      render: Views.Dialog.Test
+      render: Views.Dialog.Test,
+      stateful: Views.Input.TextLine.Path.stateful
     }
 
     case State.active_ui(state) do

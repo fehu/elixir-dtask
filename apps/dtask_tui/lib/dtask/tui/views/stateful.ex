@@ -223,3 +223,211 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
   end
 
 end
+
+defmodule DTask.TUI.Views.Stateful.OneLineInput do
+  alias DTask.TUI.Views.Stateful
+  alias ExTermbox.Event
+
+  import DTask.Util.Syntax, only: [<|>: 2]
+
+  # # # # # # # # # # # # # # # # # # # #
+
+  defmodule State do
+    use StructAccess
+
+    defstruct [cursor: 0, offset: 0, text: []]
+
+    @type t :: %__MODULE__{
+                 cursor: non_neg_integer,
+                 offset: non_neg_integer,
+                 text: charlist
+               }
+  end
+
+  @type state :: __MODULE__.State.t
+
+  # # # # # # # # # # # # # # # # # # # #
+
+  @type move_op :: {:+, pos_integer | [char, ...]}
+                 | {:-, pos_integer | [char, ...]}
+                 | :++
+                 | :--
+                 | :first
+                 | :last
+  @callback move(move_op) :: (TUI.state, state -> state)
+  @callback print(char) :: (TUI.state, state -> state)
+  @callback delete(:+ | :-, integer | [char, ...]) :: (TUI.state, state -> state)
+
+  @callback input_width(TUI.state) :: non_neg_integer
+  @optional_callbacks input_width: 1
+
+  # # # # # # # # # # # # # # # # # # # #
+
+  @default_long_sep  [? ]
+  @default_short_sep [? ]
+
+  @doc """
+  Supported ops:
+    * `long_sep: [char]`
+      Controls `ctrl_arrow_right`, `ctrl_arrow_left`, `ctrl_w`.
+    * `short_sep: [char]`
+      Controls `arrow_up`, `arrow_down`, `ctrl_backspace`, `ctrl_delete_ch`.
+    * Overrides
+      * `init: state`
+      * `bind: {:replace | :add, binds}`
+      * `or: fn %Event, TUI.state -> (state -> state) end`
+  """
+  defmacro __using__(opts) do
+    long_sep  = opts[:long_sep]  <|> @default_long_sep
+    short_sep = opts[:short_sep] <|> @default_short_sep
+
+    default_init = quote do: %unquote(__MODULE__).State{}
+    default_bind = quote do
+      %{
+        # Navigate
+        %{key: @arrow_right}        => [{:move, [+: 1]}],
+        %{key: @arrow_left}         => [{:move, [-: 1]}],
+        %{key: @arrow_up}           => [{:move, [+: unquote(short_sep)]}],
+        %{key: @arrow_down}         => [{:move, [-: unquote(short_sep)]}],
+        %{ch: @ctrl_arrow_right_ch} => [{:move, [+: unquote(long_sep)]}],
+        %{ch: @ctrl_arrow_left_ch}  => [{:move, [-: unquote(long_sep)]}],
+        %{ch: @ctrl_arrow_up_ch}    => [{:move, [:first]}],
+        %{ch: @ctrl_arrow_down_ch}  => [{:move, [:last]}],
+        %{key: @home}               => [{:move, [:first]}],
+        %{key: @end_}               => [{:move, [:last]}],
+        %{key: @page_up}            => [{:move, [:--]}],
+        %{key: @page_down}          => [{:move, [:++]}],
+        # Delete
+        %{key: @delete}         => [{:delete, [:+, 1]}],
+        %{key: @backspace}      => [{:delete, [:-, 1]}],
+        %{key: @backspace2}     => [{:delete, [:-, 1]}],
+        %{key: @ctrl_backspace} => [{:delete, [:-, unquote(short_sep)]}],
+        %{key: @ctrl_w}         => [{:delete, [:-, unquote(long_sep)]}],
+        %{ch: @ctrl_delete_ch}  => [{:delete, [:+, unquote(short_sep)]}],
+        # Input
+        %{key: @space} => [{:print, [? ]}]
+      }
+    end
+    default_or = quote do
+      fn
+        %Event{ch: ch}, s when ch != 0 -> &(__MODULE__.print(ch).(s, &1))
+      end
+    end
+
+    quote do
+      # # # # # Quoted # # # # #
+      alias DTask.TUI.Views.Stateful.OneLineInput
+
+      @behaviour OneLineInput
+
+      use DTask.TUI.Util.Chars
+      use DTask.TUI.Util.Keys
+      use DTask.TUI.Views.Stateful.Reactive,
+          init: unquote(opts[:init] <|> default_init),
+          bind: unquote(opts[:bind] <|> default_bind),
+          or:   unquote(opts[:or]   <|> default_or)
+
+      @impl true
+      @spec state_key :: atom
+      def state_key, do: :text_input
+
+      @impl true
+      @spec move(OneLineInput.move_op) :: (TUI.state, OneLineInput.state -> OneLineInput.state)
+      def move({:+, n})   when is_integer(n), do: upd_cursor(&(&1.cursor + n))
+      def move({:-, n})   when is_integer(n), do: upd_cursor(&(&1.cursor - n))
+      def move({:+, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep) <|> &1))
+      def move({:-, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep, :rev) <|> &1))
+      def move(:++),    do: upd_cursor(&(&2.cursor + round(input_width(&1) / 2)))
+      def move(:--),    do: upd_cursor(&(&2.cursor - round(input_width(&1) / 2)))
+      def move(:first), do: upd_cursor(fn _ -> 0 end, :unsafe)
+      def move(:last),  do: upd_cursor(fn _, s -> max_cursor(s) end, :unsafe)
+      # Other operations are not supported
+      def move(_), do: fn _, s -> s end
+
+
+      @impl true
+      @spec print(char) :: (TUI.state, OneLineInput.state -> OneLineInput.state)
+      def print(ch), do: fn state, s ->
+        update_in(s.text, &List.insert_at(&1, s.cursor, ch))
+        |> upd_cursor_0(s.cursor + 1, state, :unsafe)
+      end
+
+
+      @impl true
+      @spec delete(:+ | :-, integer | [char, ...]) :: (TUI.state, OneLineInput.state -> OneLineInput.state)
+      def delete(op, arg), do: fn state, s ->
+        {erase_l, erase_r} = case {op, arg} do
+          {:+, i} when is_integer(i) -> {nil, s.cursor + i}
+          {:+, l} when is_list(l)    -> {nil, next_index_of(s, l, :rev) <|> max_cursor(s)}
+          {:-, i} when is_integer(i) -> {max(0, s.cursor - i), nil}
+          {:-, l} when is_list(l)    -> {next_index_of(s, l, :rev) <|> 0, nil}
+        end
+        erase_start = erase_l <|> s.cursor
+        erase_end   = erase_r <|> s.cursor
+        erase_len   = erase_end - erase_start
+        {lhs, rhs}  = Enum.split(s.text, erase_start)
+        new_text    = lhs ++ Enum.drop(rhs, erase_len)
+
+        new_s_0 = put_in(s.text, new_text)
+        if erase_l, do: upd_cursor_0(new_s_0, erase_l, state),
+                  else: upd_offset(new_s_0, s.cursor, state)
+      end
+
+      defp next_index_of(s, sep, rev \\ nil) do
+        cur = s.cursor
+        i = if rev, do: Enum.take(s.text, cur)
+                     |> Enum.reverse
+                     |> Enum.find_index(&(&1 in sep)),
+                  else: Enum.drop(s.text, cur)
+                     |> Enum.find_index(&(&1 in sep))
+        unless is_nil(i) or cur < 0,
+               do: if(rev, do: cur - i, else: cur + i),
+               else: nil
+      end
+
+      defp upd_cursor(f, unsafe \\ nil)
+      defp upd_cursor(f, unsafe) when is_function(f, 1),
+           do: upd_cursor(fn _, c -> f.(c) end, unsafe)
+      defp upd_cursor(f, unsafe) when is_function(f, 2),
+           do: &upd_cursor_0(&2, f.(&1, &2), &1, unsafe)
+
+      defp upd_cursor_0(s, cur, state, unsafe \\ nil) do
+        new_cur = unless unsafe,
+                         do: safe_cursor(cur, s),
+                         else: cur
+
+        s |> put_in([:cursor], new_cur) |> upd_offset(new_cur, state)
+      end
+
+      defp upd_offset(s, cur, state) do
+        max_v = input_width(state)
+        out_of_view = cur <= s.offset
+        or cur >= max_v
+        if out_of_view do
+          # Center view of cursor
+          max_offset = max_cursor(s) - max_v
+          new_offset = case cur - round(max_v / 2) do
+            offset when offset < 0          -> 0
+            offset when offset > max_offset -> max_offset
+            offset                          -> offset
+          end
+          %{s | :offset => new_offset}
+        else
+          s
+        end
+      end
+
+      defp safe_cursor(cur, _) when cur <= 0, do: 0
+      defp safe_cursor(cur, s) do
+        max = max_cursor(s)
+        if cur > max, do: max, else: cur
+      end
+
+      defp max_cursor(s), do: length(s.text)
+
+      defoverridable delete: 2, move: 1, print: 1, state_key: 0
+      # # # # # End Quoted # # # # #
+    end
+  end
+
+end

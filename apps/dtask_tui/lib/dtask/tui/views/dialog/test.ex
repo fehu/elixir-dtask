@@ -14,8 +14,13 @@ defmodule DTask.TUI.Views.Dialog.Test do
 
   @impl true
   @spec body(TUI.state) :: [Element.t]
-  def body(_) do
-    [label(content: "!!!")]
+  def body(state) do
+    render = TUI.Views.Input.TextLine.make(%{
+      input_width: fn _ -> 20 end,
+      title: "..."
+    })
+
+    [label(content: "!!!"), render.(state)]
   end
 
 end

@@ -24,12 +24,21 @@ defmodule DTask.TUI.Util.Keys do
   @page_down   Constants.key(:pgdn)
   @home        Constants.key(:home)
   @end_        Constants.key(:end)
+  @insert      Constants.key(:insert)
+  @delete      Constants.key(:delete)
 
   @space       Constants.key(:space)
+  @backspace   Constants.key(:backspace)
+  @backspace2  Constants.key(:backspace2)
+  @enter       Constants.key(:enter)
+  @tab         Constants.key(:tab)
   @esc         Constants.key(:esc)
 
-  @ctrl_d      Constants.key(:ctrl_d)
-  @ctrl_q      Constants.key(:ctrl_q)
+  @ctrl_backspace 0x44
+  @ctrl_c         Constants.key(:ctrl_c)
+  @ctrl_d         Constants.key(:ctrl_d)
+  @ctrl_q         Constants.key(:ctrl_q)
+  @ctrl_w         Constants.key(:ctrl_w)
 
   defmacro __using__(_) do
     quote do
@@ -41,12 +50,21 @@ defmodule DTask.TUI.Util.Keys do
       @page_down   unquote @page_down
       @home        unquote @home
       @end_        unquote @end_
+      @insert      unquote @insert
+      @delete      unquote @delete
 
       @space       unquote @space
+      @backspace   unquote @backspace
+      @backspace2  unquote @backspace2
+      @enter       unquote @enter
+      @tab         unquote @tab
       @esc         unquote @esc
 
-      @ctrl_d      unquote @ctrl_d
-      @ctrl_q      unquote @ctrl_q
+      @ctrl_backspace unquote @ctrl_backspace
+      @ctrl_c         unquote @ctrl_c
+      @ctrl_d         unquote @ctrl_d
+      @ctrl_q         unquote @ctrl_q
+      @ctrl_w         unquote @ctrl_w
     end
   end
 
@@ -58,10 +76,45 @@ defmodule DTask.TUI.Util.Keys do
   def page_down,   do: @page_down
   def home,        do: @home
   def end_,        do: @end_
+  def insert,      do: @insert
+  def delete,      do: @delete
 
   def space,       do: @space
+  def backspace,   do: @backspace
+  def backspace2,  do: @backspace2
+  def enter,       do: @enter
+  def tab,         do: @tab
   def esc,         do: @esc
 
-  def ctrl_d,      do: @ctrl_d
-  def ctrl_q,      do: @ctrl_q
+  def ctrl_backspace, do: @ctrl_backspace
+  def ctrl_c,         do: @ctrl_c
+  def ctrl_d,         do: @ctrl_d
+  def ctrl_q,         do: @ctrl_q
+  def ctrl_w,         do: @ctrl_w
+end
+
+defmodule DTask.TUI.Util.Chars do
+  alias Ratatouille.Constants
+
+  @ctrl_arrow_up_ch    0x41
+  @ctrl_arrow_down_ch  0x42
+  @ctrl_arrow_right_ch 0x43
+  @ctrl_arrow_left_ch  0x44
+  @ctrl_delete_ch      0x7E
+
+  defmacro __using__(_) do
+    quote do
+      @ctrl_arrow_up_ch    unquote @ctrl_arrow_up_ch
+      @ctrl_arrow_down_ch  unquote @ctrl_arrow_down_ch
+      @ctrl_arrow_right_ch unquote @ctrl_arrow_right_ch
+      @ctrl_arrow_left_ch  unquote @ctrl_arrow_left_ch
+      @ctrl_delete_ch      unquote @ctrl_delete_ch
+    end
+  end
+
+  def ctrl_arrow_up_ch,    do: @ctrl_arrow_up_ch
+  def ctrl_arrow_down_ch,  do: @ctrl_arrow_down_ch
+  def ctrl_arrow_right_ch, do: @ctrl_arrow_right_ch
+  def ctrl_arrow_left_ch,  do: @ctrl_arrow_left_ch
+  def ctrl_delete_ch,      do: @ctrl_delete_ch
 end

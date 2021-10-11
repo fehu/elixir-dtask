@@ -21,8 +21,6 @@ defmodule DTask.TUI.Tab do
 
   # # # Build helpers # # #
 
-  require Logger # TODO
-
   @spec init(t | TUI.State.t) :: t | TUI.State.t
   def init(state) when is_struct(state, TUI.State) do
     update_in(state.ui.tab, &init/1)
