@@ -18,13 +18,17 @@ defmodule DTask.TUI.Overlay do
                stateful: TUI.Views.Stateful.t | nil
              }
 
+  @state_keys [:ui, :overlay]
+
   @spec open(TUI.State.t, t) :: TUI.State.t
   def open(state, overlay) when is_nil(state.ui.overlay),
-      do: put_in(state.ui.overlay, overlay)
+      do: state |> put_in(@state_keys, overlay)
+                |> TUI.State.put_active_ui(@state_keys)
 
   @spec close(TUI.State.t) :: TUI.State.t
-  def close(state),
-      do: put_in(state.ui.overlay, nil)
+  def close(state) when not is_nil(state.ui.overlay),
+      do: state |> TUI.State.pop_active_ui(state.ui.overlay)
+                |> put_in(@state_keys, nil)
 
   # TODO
   @spec width(TUI.State.t) :: non_neg_integer

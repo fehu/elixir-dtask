@@ -132,6 +132,7 @@ defmodule DTask.TUI do
       ui: %State.UI{
         window: context.window,
         layout: layout,
+        active_stack: [[:ui, :tab]],
         tab: @default_tab,
         show_help: @default_show_help
       }
@@ -181,27 +182,28 @@ defmodule DTask.TUI do
       render: Views.Dialog.Test
     }
 
-    if state.ui.overlay do
-      case {event, state.ui.overlay.stateful} do
-        {%{key: k}, _} when k in @close_overlay_keys -> state |> Update.close_overlay()
-        {_ , nil}    -> state
-        {e, overlay} -> state |> update_stateful_in([:ui, :overlay], e)
-      end
-    else
-      case event do
-        %{key: ^k_s}                    -> Overlay.open(state, test_overlay) # TODO
-        %{ch: c} when c in @quit_tab_ch -> shutdown()
-        %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
-        %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
-        # Tab reactions
-        _ ->
-          update_stateful_in(state, [:ui, :tab], event)
-      end
+    case State.active_ui(state) do
+      %Overlay{} ->
+        case {event, state.ui.overlay.stateful} do
+          {%{key: k}, _} when k in @close_overlay_keys -> state |> Update.close_overlay()
+          {_ , nil} -> state
+          {e, _}    -> state |> update_active_stateful(e)
+        end
+      %Tab{} ->
+        case event do
+          %{key: ^k_s}                    -> Overlay.open(state, test_overlay) # TODO
+          %{ch: c} when c in @quit_tab_ch -> shutdown()
+          %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
+          %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
+          # Tab reactions
+          _ ->
+            update_active_stateful(state, event)
+        end
     end
   end
 
-  defp update_stateful_in(state, keys, event),
-       do: update_in(state, keys, update_stateful(event, state))
+  defp update_active_stateful(state, event),
+       do: update_in(state, State.active_ui_keys(state), update_stateful(event, state))
 
   defp update_stateful(event, state), do: fn s0 ->
     stateful = s0.stateful
