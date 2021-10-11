@@ -3,15 +3,19 @@ defmodule DTask.TUI.Views.Dialog.Test do
 
   alias DTask.TUI
 
-  import Ratatouille.View
-
-  @behaviour TUI.Render
+  use TUI.Views.Dialog
+  # Implements
+  # @behaviour TUI.Render
+  # @behaviour TUI.Views.Dialog
 
   @impl true
-  def render(state) do
-    panel(title: "Test") do
+  @spec title(TUI.state) :: String.t
+  def title(_), do: "Test"
 
-    end
+  @impl true
+  @spec body(TUI.state) :: [Element.t]
+  def body(_) do
+    [label(content: "!!!")]
   end
 
 end
