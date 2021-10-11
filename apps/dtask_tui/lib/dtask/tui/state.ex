@@ -58,7 +58,7 @@ defmodule DTask.TUI.State do
     use StructAccess
 
     @enforce_keys [:window, :layout, :tab, :show_help]
-    defstruct     [:window, :layout, :tab, :show_help]
+    defstruct     [:window, :layout, :tab, :show_help, :overlay]
 
     @typep pos_int_2 :: {pos_integer, pos_integer}
 
@@ -77,6 +77,7 @@ defmodule DTask.TUI.State do
                  window: window,
                  layout: layout,
                  tab: tab,
+                 overlay: DTask.TUI.Overlay.t | nil,
                  show_help: boolean
                }
 

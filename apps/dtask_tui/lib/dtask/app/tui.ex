@@ -37,7 +37,8 @@ defmodule DTask.App.TUI do
            Ratatouille.Runtime.Supervisor,
            runtime: [
              app: DTask.TUI,
-             shutdown: :system
+             shutdown: :system,
+             quit_events: DTask.TUI.quit_events
            ]
          }]
 

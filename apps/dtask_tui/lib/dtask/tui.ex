@@ -1,8 +1,8 @@
 defmodule DTask.TUI do
   @moduledoc false
 
-  alias DTask.TUI.{Data, State, Update, Views}
-  alias DTask.TUI.Tab
+  alias DTask.TUI.{Data, Overlay, State, Tab, Update, Views}
+  alias DTask.TUI.Util.Keys
 
   alias Ratatouille.Renderer.Element
   alias Ratatouille.Runtime.{Command, Subscription}
@@ -86,7 +86,15 @@ defmodule DTask.TUI do
   }
   @layout_keys Map.keys(@layout_keys_map)
 
+  @close_overlay_keys [Keys.esc]
+
+  @quit_events [{:key, Keys.ctrl_d}, {:key, Keys.ctrl_q}]
+  @quit_tab_ch [?q, ?Q]
+
   @tick_millis 1_000
+
+  @spec quit_events :: [{:ch, char} | {:key, integer}]
+  def quit_events, do: @quit_events
 
   @impl true
   @spec init(map()) :: state | {state, Command.t()}
@@ -166,17 +174,41 @@ defmodule DTask.TUI do
 
   # Events
   def update(state, {:event, event}) do
-    case event do
-      %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
-      %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
-      # Tab reactions
-      _ ->
-        tab_stateful = state.ui.tab.stateful
-        react = if tab_stateful, do: tab_stateful.react.(event, state)
-        if react,
-           do: update_in(state.ui.tab.stateful, react),
-           else: state
+    # TODO ==========================================
+    k_s = Keys.space()
+    test_overlay = %Overlay{
+      id: :test,
+      render: Views.Dialog.Test
+    }
+
+    if state.ui.overlay do
+      case {event, state.ui.overlay.stateful} do
+        {%{key: k}, _} when k in @close_overlay_keys -> state |> Update.close_overlay()
+        {_ , nil}    -> state
+        {e, overlay} -> state |> update_stateful_in([:ui, :overlay], e)
+      end
+    else
+      case event do
+        %{key: ^k_s}                    -> Overlay.open(state, test_overlay) # TODO
+        %{ch: c} when c in @quit_tab_ch -> shutdown()
+        %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
+        %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
+        # Tab reactions
+        _ ->
+          update_stateful_in(state, [:ui, :tab], event)
+      end
     end
+  end
+
+  defp update_stateful_in(state, keys, event),
+       do: update_in(state, keys, update_stateful(event, state))
+
+  defp update_stateful(event, state), do: fn s0 ->
+    stateful = s0.stateful
+    react = if stateful, do: stateful.react.(event, state)
+    if react,
+       do: update_in(s0.stateful, react),
+       else: s0
   end
 
   @impl true
@@ -199,6 +231,9 @@ defmodule DTask.TUI do
   @spec render(state) :: Element.t
   defdelegate render(state), to: Views.MainView
 
+  # # # Shutdown # # #
+
+  def shutdown(), do: System.stop()
 
   # # # Private functions # # #
 

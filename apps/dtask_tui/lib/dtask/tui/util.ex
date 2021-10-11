@@ -25,6 +25,12 @@ defmodule DTask.TUI.Util.Keys do
   @home        Constants.key(:home)
   @end_        Constants.key(:end)
 
+  @space       Constants.key(:space)
+  @esc         Constants.key(:esc)
+
+  @ctrl_d      Constants.key(:ctrl_d)
+  @ctrl_q      Constants.key(:ctrl_q)
+
   defmacro __using__(_) do
     quote do
       @arrow_up    unquote @arrow_up
@@ -35,6 +41,12 @@ defmodule DTask.TUI.Util.Keys do
       @page_down   unquote @page_down
       @home        unquote @home
       @end_        unquote @end_
+
+      @space       unquote @space
+      @esc         unquote @esc
+
+      @ctrl_d      unquote @ctrl_d
+      @ctrl_q      unquote @ctrl_q
     end
   end
 
@@ -46,4 +58,10 @@ defmodule DTask.TUI.Util.Keys do
   def page_down,   do: @page_down
   def home,        do: @home
   def end_,        do: @end_
+
+  def space,       do: @space
+  def esc,         do: @esc
+
+  def ctrl_d,      do: @ctrl_d
+  def ctrl_q,      do: @ctrl_q
 end

@@ -28,4 +28,7 @@ defmodule DTask.TUI.Update do
   def layout(state, layout),
       do: put_in(state.ui.layout, layout)
 
+  @spec close_overlay(State.t) :: State.t()
+  defdelegate close_overlay(state), to: DTask.TUI.Overlay, as: :close
+
 end

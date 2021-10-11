@@ -157,7 +157,10 @@ defmodule DTask.TUI.Views.MainView do
         end
       ]
     end
-    view(view_opts, extra ++ main)
+    overlay = if state.ui.overlay,
+                 do: [overlay([state.ui.overlay.render.render(state)])],
+                 else: []
+    view(view_opts, extra ++ main ++ overlay)
   end
 
   @spec const_height(TUI.state) :: non_neg_integer
