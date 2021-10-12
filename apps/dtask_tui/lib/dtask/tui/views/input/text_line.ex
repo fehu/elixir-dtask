@@ -25,7 +25,12 @@ defmodule DTask.TUI.Views.Input.TextLine do
                }
   @spec make(cfg) :: (TUI.state -> Element.t())
   def make(cfg) when is_map_key(cfg, :input_width), do: fn state ->
-    input_s = state.ui.overlay.stateful.state.text_input
+    # TODO: hardcoded `state.text_input`
+    input_s_0 = TUI.State.active_ui(state).stateful.state.text_input
+    input_s = case input_s_0 do
+      s when is_nil(s.offset) -> put_in(s.offset, s.cursor - cfg.input_width.(state))
+      s -> s
+    end
     width   = cfg.input_width.(state)
     visible = Enum.slice(input_s.text, input_s.offset, width)
     cur_idx = input_s.cursor - input_s.offset

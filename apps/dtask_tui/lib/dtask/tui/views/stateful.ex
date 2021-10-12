@@ -32,6 +32,30 @@ defmodule DTask.TUI.Views.Stateful do
 
   @callback state_key :: atom
   @callback stateful() :: t
+
+  # # # Behaviour utilities # # #
+
+  @type create_spec :: module | {module, (term -> term)}
+
+  @spec create(module, (term -> term) | nil) :: t
+  def create(stateful_behaviour, upd \\ nil) when is_atom(stateful_behaviour) do
+    stateful = stateful_behaviour.stateful()
+    if upd, do: update(stateful, stateful_behaviour, upd), else: stateful
+  end
+
+  @spec create_many([create_spec, ...]) :: t | nil
+  def create_many([]), do: nil
+  def create_many(specs) when is_list(specs),
+      do: specs |> Stream.map(fn
+                     {mod, upd} -> __MODULE__.create(mod, upd)
+                     mod        -> __MODULE__.create(mod)
+                   end)
+                 |> Enum.reduce(&__MODULE__.merge/2)
+
+  @spec update(t, module, (term -> term)) :: t
+  def update(stateful_struct, stateful_behaviour, upd),
+      do: update_in(stateful_struct, [:state, stateful_behaviour.state_key], upd)
+
 end
 
 defmodule DTask.TUI.Views.Stateful.Reactive do
@@ -239,7 +263,7 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
 
     @type t :: %__MODULE__{
                  cursor: non_neg_integer,
-                 offset: non_neg_integer,
+                 offset: non_neg_integer | nil,
                  text: charlist
                }
   end

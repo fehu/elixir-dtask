@@ -27,13 +27,10 @@ defmodule DTask.TUI.Tab do
   end
   def init(tab) when is_struct(tab, __MODULE__) do
     update_in tab.stateful, fn
-      [] ->
-        nil
-      mods when is_list(mods) ->
-        Stream.map(mods, &(&1.stateful)) |> Enum.reduce(&Stateful.merge/2)
-      s when is_struct(s, Stateful) ->
-        s
-      _ -> nil
+      []                            -> nil
+      mods when is_list(mods)       -> Stateful.create_many(mods)
+      s when is_struct(s, Stateful) -> s
+      _                             -> nil
     end
   end
 
