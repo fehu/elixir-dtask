@@ -93,28 +93,29 @@ defmodule DTask.TUI.Util.Keys do
   def ctrl_w,         do: @ctrl_w
 end
 
-defmodule DTask.TUI.Util.Chars do
+defmodule DTask.TUI.Util.Escaped do
+  alias DTask.TUI.Util.Keys
   alias Ratatouille.Constants
 
-  @ctrl_arrow_up_ch    0x41
-  @ctrl_arrow_down_ch  0x42
-  @ctrl_arrow_right_ch 0x43
-  @ctrl_arrow_left_ch  0x44
-  @ctrl_delete_ch      0x7E
+  @ctrl_arrow_up_esc    {Keys.esc, [91, 49, 59, 53, 65]}
+  @ctrl_arrow_down_esc  {Keys.esc, [91, 49, 59, 53, 66]}
+  @ctrl_arrow_left_esc  {Keys.esc, [91, 49, 59, 53, 68]}
+  @ctrl_arrow_right_esc {Keys.esc, [91, 49, 59, 53, 66]}
+  @ctrl_delete_esc      {Keys.esc, [91, 51, 59, 53, 126]}
 
   defmacro __using__(_) do
     quote do
-      @ctrl_arrow_up_ch    unquote @ctrl_arrow_up_ch
-      @ctrl_arrow_down_ch  unquote @ctrl_arrow_down_ch
-      @ctrl_arrow_right_ch unquote @ctrl_arrow_right_ch
-      @ctrl_arrow_left_ch  unquote @ctrl_arrow_left_ch
-      @ctrl_delete_ch      unquote @ctrl_delete_ch
+      @ctrl_arrow_up_esc    unquote @ctrl_arrow_up_esc
+      @ctrl_arrow_down_esc  unquote @ctrl_arrow_down_esc
+      @ctrl_arrow_right_esc unquote @ctrl_arrow_right_esc
+      @ctrl_arrow_left_esc  unquote @ctrl_arrow_left_esc
+      @ctrl_delete_esc      unquote @ctrl_delete_esc
     end
   end
 
-  def ctrl_arrow_up_ch,    do: @ctrl_arrow_up_ch
-  def ctrl_arrow_down_ch,  do: @ctrl_arrow_down_ch
-  def ctrl_arrow_right_ch, do: @ctrl_arrow_right_ch
-  def ctrl_arrow_left_ch,  do: @ctrl_arrow_left_ch
-  def ctrl_delete_ch,      do: @ctrl_delete_ch
+  def ctrl_arrow_up_esc,    do: @ctrl_arrow_up_esc
+  def ctrl_arrow_down_esc,  do: @ctrl_arrow_down_esc
+  def ctrl_arrow_right_esc, do: @ctrl_arrow_right_esc
+  def ctrl_arrow_left_esc,  do: @ctrl_arrow_left_esc
+  def ctrl_delete_esc,      do: @ctrl_delete_esc
 end

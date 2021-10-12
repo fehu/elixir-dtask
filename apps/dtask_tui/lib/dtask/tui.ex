@@ -176,8 +176,11 @@ defmodule DTask.TUI do
   # Events
   def update(state, {:event, event_0}) do
     event = case event_0 do
-      {:bulk, es}  -> %{bulk: es}
-      e            -> e
+      e0={:batch, [h | t]} when h.ch == 0 ->
+        if Enum.all?(t, &(&1.key == 0)),
+           do: %{esc: {h.key, Enum.map(t, &(&1.ch))}},
+           else: e0
+      e -> e
     end
 
     # TODO ==========================================

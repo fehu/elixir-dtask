@@ -76,7 +76,7 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
 
       rhs = update_state_expr s1, quote do: fn unquote(s0) -> unquote(apply_rhs) end
 
-      quote do: (%Event{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
+      quote do: (%{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
     end
 
     or_clauses = case opts[:or] do
@@ -275,7 +275,7 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
     * Overrides
       * `init: state`
       * `bind: {:replace | :add, binds}`
-      * `or: fn %Event, TUI.state -> (state -> state) end`
+      * `or: fn %event, TUI.state -> (state -> state) end`
   """
   defmacro __using__(opts) do
     long_sep  = opts[:long_sep]  <|> @default_long_sep
@@ -285,18 +285,18 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
     default_bind = quote do
       %{
         # Navigate
-        %{key: @arrow_right}        => [{:move, [+: 1]}],
-        %{key: @arrow_left}         => [{:move, [-: 1]}],
-        %{key: @arrow_up}           => [{:move, [+: unquote(short_sep)]}],
-        %{key: @arrow_down}         => [{:move, [-: unquote(short_sep)]}],
-        %{ch: @ctrl_arrow_right_ch} => [{:move, [+: unquote(long_sep)]}],
-        %{ch: @ctrl_arrow_left_ch}  => [{:move, [-: unquote(long_sep)]}],
-        %{ch: @ctrl_arrow_up_ch}    => [{:move, [:first]}],
-        %{ch: @ctrl_arrow_down_ch}  => [{:move, [:last]}],
-        %{key: @home}               => [{:move, [:first]}],
-        %{key: @end_}               => [{:move, [:last]}],
-        %{key: @page_up}            => [{:move, [:--]}],
-        %{key: @page_down}          => [{:move, [:++]}],
+        %{key: @arrow_right}          => [{:move, [+: 1]}],
+        %{key: @arrow_left}           => [{:move, [-: 1]}],
+        %{key: @arrow_up}             => [{:move, [+: unquote(short_sep)]}],
+        %{key: @arrow_down}           => [{:move, [-: unquote(short_sep)]}],
+        %{esc: @ctrl_arrow_right_esc} => [{:move, [+: unquote(long_sep)]}],
+        %{esc: @ctrl_arrow_left_esc}  => [{:move, [-: unquote(long_sep)]}],
+        %{esc: @ctrl_arrow_up_esc}    => [{:move, [:first]}],
+        %{esc: @ctrl_arrow_down_esc}  => [{:move, [:last]}],
+        %{key: @home}                 => [{:move, [:first]}],
+        %{key: @end_}                 => [{:move, [:last]}],
+        %{key: @page_up}              => [{:move, [:--]}],
+        %{key: @page_down}            => [{:move, [:++]}],
         # Delete
         %{key: @delete}         => [{:delete, [:+, 1]}],
         %{key: @backspace}      => [{:delete, [:-, 1]}],
@@ -310,7 +310,7 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
     end
     default_or = quote do
       fn
-        %Event{ch: ch}, s when ch != 0 -> &(__MODULE__.print(ch).(s, &1))
+        %{ch: ch}, s when ch != 0 -> &(__MODULE__.print(ch).(s, &1))
       end
     end
 
@@ -320,7 +320,7 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
 
       @behaviour OneLineInput
 
-      use DTask.TUI.Util.Chars
+      use DTask.TUI.Util.Escaped
       use DTask.TUI.Util.Keys
       use DTask.TUI.Views.Stateful.Reactive,
           init: unquote(opts[:init] <|> default_init),
