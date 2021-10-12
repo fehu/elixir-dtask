@@ -174,7 +174,12 @@ defmodule DTask.TUI do
   end
 
   # Events
-  def update(state, {:event, event}) do
+  def update(state, {:event, event_0}) do
+    event = case event_0 do
+      {:bulk, es}  -> %{bulk: es}
+      e            -> e
+    end
+
     # TODO ==========================================
     k_s = Keys.space()
     test_overlay = %Overlay{
