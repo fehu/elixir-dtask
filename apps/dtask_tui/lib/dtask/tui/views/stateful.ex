@@ -298,12 +298,12 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
         %{key: @page_up}              => [{:move, [:--]}],
         %{key: @page_down}            => [{:move, [:++]}],
         # Delete
-        %{key: @delete}         => [{:delete, [:+, 1]}],
-        %{key: @backspace}      => [{:delete, [:-, 1]}],
-        %{key: @backspace2}     => [{:delete, [:-, 1]}],
-        %{key: @ctrl_backspace} => [{:delete, [:-, unquote(short_sep)]}],
-        %{key: @ctrl_w}         => [{:delete, [:-, unquote(long_sep)]}],
-        %{ch: @ctrl_delete_ch}  => [{:delete, [:+, unquote(short_sep)]}],
+        %{key: @delete}          => [{:delete, [:+, 1]}],
+        %{key: @backspace}       => [{:delete, [:-, 1]}],
+        %{key: @backspace2}      => [{:delete, [:-, 1]}],
+        %{key: @ctrl_backspace}  => [{:delete, [:-, unquote(short_sep)]}],
+        %{key: @ctrl_w}          => [{:delete, [:-, unquote(long_sep)]}],
+        %{esc: @ctrl_delete_esc} => [{:delete, [:+, unquote(short_sep)]}],
         # Input
         %{key: @space} => [{:print, [? ]}]
       }
@@ -335,8 +335,8 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
       @spec move(OneLineInput.move_op) :: (TUI.state, OneLineInput.state -> OneLineInput.state)
       def move({:+, n})   when is_integer(n), do: upd_cursor(&(&1.cursor + n))
       def move({:-, n})   when is_integer(n), do: upd_cursor(&(&1.cursor - n))
-      def move({:+, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep) <|> &1))
-      def move({:-, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep, :rev) <|> &1))
+      def move({:+, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep) <|> max_cursor(&1)))
+      def move({:-, sep}) when is_list(sep),  do: upd_cursor(&(next_index_of(&1, sep, :rev) <|> 0))
       def move(:++),    do: upd_cursor(&(&2.cursor + round(input_width(&1) / 2)))
       def move(:--),    do: upd_cursor(&(&2.cursor - round(input_width(&1) / 2)))
       def move(:first), do: upd_cursor(fn _ -> 0 end, :unsafe)
@@ -375,13 +375,13 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
 
       defp next_index_of(s, sep, rev \\ nil) do
         cur = s.cursor
-        i = if rev, do: Enum.take(s.text, cur)
+        i = if rev, do: Enum.take(s.text, cur - 1)
                      |> Enum.reverse
                      |> Enum.find_index(&(&1 in sep)),
-                  else: Enum.drop(s.text, cur)
+                  else: Enum.drop(s.text, cur + 1)
                      |> Enum.find_index(&(&1 in sep))
-        unless is_nil(i) or cur < 0,
-               do: if(rev, do: cur - i, else: cur + i),
+        unless is_nil(i),
+               do: if(rev, do: cur - i - 1, else: cur + i + 1),
                else: nil
       end
 

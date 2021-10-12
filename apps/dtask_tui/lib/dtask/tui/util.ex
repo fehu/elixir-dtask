@@ -28,13 +28,12 @@ defmodule DTask.TUI.Util.Keys do
   @delete      Constants.key(:delete)
 
   @space       Constants.key(:space)
-  @backspace   Constants.key(:backspace)
-  @backspace2  Constants.key(:backspace2)
+  @backspace   Constants.key(:backspace2)
   @enter       Constants.key(:enter)
   @tab         Constants.key(:tab)
   @esc         Constants.key(:esc)
 
-  @ctrl_backspace 0x44
+  @ctrl_backspace Constants.key(:backspace)
   @ctrl_c         Constants.key(:ctrl_c)
   @ctrl_d         Constants.key(:ctrl_d)
   @ctrl_q         Constants.key(:ctrl_q)
@@ -100,7 +99,7 @@ defmodule DTask.TUI.Util.Escaped do
   @ctrl_arrow_up_esc    {Keys.esc, [91, 49, 59, 53, 65]}
   @ctrl_arrow_down_esc  {Keys.esc, [91, 49, 59, 53, 66]}
   @ctrl_arrow_left_esc  {Keys.esc, [91, 49, 59, 53, 68]}
-  @ctrl_arrow_right_esc {Keys.esc, [91, 49, 59, 53, 66]}
+  @ctrl_arrow_right_esc {Keys.esc, [91, 49, 59, 53, 67]}
   @ctrl_delete_esc      {Keys.esc, [91, 51, 59, 53, 126]}
 
   defmacro __using__(_) do
