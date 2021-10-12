@@ -29,7 +29,7 @@ defmodule DTask.TUI.Views.Input.TextLine do
     width   = cfg.input_width.(state)
     visible = Enum.slice(input_s.text, input_s.offset, width)
     cur_idx = input_s.cursor - input_s.offset
-    fill = width - length(visible)
+    fill = width - length(visible) + 1
 
     text = case Enum.split(visible, cur_idx) do
       {lhs, [c | rhs]} -> render_input(lhs, c,    rhs, fill)
