@@ -8,13 +8,12 @@ defmodule DTask.TUI.Overlay do
   use StructAccess
 
   @enforce_keys [:id, :render]
-  defstruct     [:id, :render, :cfg, :padding, :stateful]
+  defstruct     [:id, :render, :cfg, :stateful]
 
   @type t :: %__MODULE__{
                id: atom,
                render: TUI.Render.t,
                cfg: %{atom => term} | nil,
-               padding: non_neg_integer | nil,
                stateful: TUI.Views.Stateful.t | nil
              }
 
@@ -32,6 +31,5 @@ defmodule DTask.TUI.Overlay do
                 |> put_in(@state_keys, nil)
 
   @spec width(TUI.State.t) :: non_neg_integer
-  def width(state), do:
-    state.ui.window.width - @fixed_width - 2 * (maybe(state.ui.overlay, &(&1.padding)) <|> 0)
+  def width(state), do: state.ui.window.width - @fixed_width
 end

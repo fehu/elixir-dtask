@@ -18,7 +18,6 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
   def overlay(state, cfg), do: %TUI.Overlay{
     id: :export_tasks,
     render: __MODULE__,
-    padding: nil,
     stateful: Stateful.create_many [
       {__MODULE__.FileInput,
         &__MODULE__.FileInput.set_text(&1, state, cfg[:initial_path] <|> "", cursor: :last)}
