@@ -23,4 +23,6 @@ defmodule DTask.TUI.Views.Dialog.Test do
     [label(content: "!!!"), render.(state)]
   end
 
+  @impl true
+  def buttons(_), do: ["[F]oo", {"[B]ar", [color: :red]}]
 end
