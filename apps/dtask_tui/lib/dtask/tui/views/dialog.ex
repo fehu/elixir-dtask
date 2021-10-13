@@ -11,6 +11,9 @@ defmodule DTask.TUI.Views.Dialog do
   @typep button :: String.t | {String.t, keyword}
   @callback buttons(TUI.state) :: [button]
 
+  @type overlay_cfg :: term
+  @callback overlay(TUI.state, overlay_cfg) :: DTask.TUI.Overlay.t
+
 
   @grid_size 12
 
@@ -60,10 +63,7 @@ defmodule DTask.TUI.Views.Dialog do
       @impl TUI.Views.Dialog
       def buttons(_), do: []
 
-      @impl TUI.Views.Dialog
-      def button_style(_), do: []
-
-      defoverridable title: 1, body: 1, buttons: 1, button_style: 1
+      defoverridable title: 1, body: 1, buttons: 1
       # # # # # End Quoted # # # # #
     end
   end

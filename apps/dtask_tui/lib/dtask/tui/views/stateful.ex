@@ -3,14 +3,14 @@ defmodule DTask.TUI.Views.Stateful do
 
   alias ExTermbox.Event
 
-  import DTask.Util.Syntax, only: [>>>: 2, maybe_2: 3]
+  import DTask.Util.Syntax, only: [>>>: 2, maybe: 2, maybe_2: 3]
 
   use StructAccess
 
   @enforce_keys [:state, :react]
   defstruct     [:state, :react]
 
-  @typep state :: map()
+  @typep state :: %{atom => term}
 
   @type t :: %__MODULE__{
                state: state,
@@ -56,6 +56,15 @@ defmodule DTask.TUI.Views.Stateful do
   def update(stateful_struct, stateful_behaviour, upd),
       do: update_in(stateful_struct, [:state, stateful_behaviour.state_key], upd)
 
+  # # # Misc utilities # # #
+
+  @spec active_state(DTask.TUI.state, atom) :: term | nil
+  def active_state(state, key),
+      do: maybe(active_stateful(state), &get_in(&1, [:state, key]))
+
+  @spec active_stateful(DTask.TUI.state) :: term | nil
+  def active_stateful(state),
+      do: maybe(DTask.TUI.State.active_ui(state), &Map.get(&1, :stateful))
 end
 
 defmodule DTask.TUI.Views.Stateful.Reactive do
@@ -279,6 +288,8 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
   @callback print(char) :: (TUI.state, state -> state)
   @callback delete(:+ | :-, integer | [char, ...]) :: (TUI.state, state -> state)
 
+  @callback set_text(state, TUI.state, charlist | String.t, cursor: 0 | :last) :: state
+
   @callback input_width(TUI.state) :: non_neg_integer
   @optional_callbacks input_width: 1
 
@@ -391,6 +402,22 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
         new_s_0 = put_in(s.text, new_text)
         if erase_l, do: upd_cursor_0(new_s_0, erase_l, state),
                   else: upd_offset(new_s_0, s.cursor, state)
+      end
+
+      @impl true
+      @spec set_text(
+              OneLineInput.state,
+              TUI.state,
+              charlist | String.t,
+              cursor: 0 | :last
+            ) :: OneLineInput.state
+      def set_text(s, state, text_0, cursor: c) do
+        text = if is_list(text_0), do: text_0, else: String.to_charlist(text_0)
+        cur = case c do
+          0     -> 0
+          :last -> length(text)
+        end
+        upd_cursor_0(%{s | :text => text}, cur, state, :unsafe)
       end
 
       defp next_index_of(s, sep, rev \\ nil) do

@@ -3,7 +3,7 @@ defmodule DTask.TUI.Overlay do
 
   alias DTask.TUI
 
-  import DTask.Util.Syntax, only: [<|>: 2]
+  import DTask.Util.Syntax, only: [<|>: 2, maybe: 2]
 
   use StructAccess
 
@@ -18,6 +18,7 @@ defmodule DTask.TUI.Overlay do
                stateful: TUI.Views.Stateful.t | nil
              }
 
+  @fixed_width 10 * 2
   @state_keys [:ui, :overlay]
 
   @spec open(TUI.State.t, t) :: TUI.State.t
@@ -30,7 +31,7 @@ defmodule DTask.TUI.Overlay do
       do: state |> TUI.State.pop_active_ui(state.ui.overlay)
                 |> put_in(@state_keys, nil)
 
-  # TODO
   @spec width(TUI.State.t) :: non_neg_integer
-  def width(state), do: state.ui.window.width - 2 * (state.ui.overlay.padding <|> 0)
+  def width(state), do:
+    state.ui.window.width - @fixed_width - 2 * (maybe(state.ui.overlay, &(&1.padding)) <|> 0)
 end

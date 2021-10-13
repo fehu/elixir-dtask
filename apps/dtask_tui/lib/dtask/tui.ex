@@ -187,15 +187,7 @@ defmodule DTask.TUI do
     # TODO ==========================================
     k_s = Keys.space()
     test_text = '~/foo/bar/asdsad/qwerty/my-files/Data/baz.copy/sad.rer'
-    test_overlay = %Overlay{
-      id: :test,
-      render: Views.Dialog.Test,
-      stateful: Views.Stateful.create(Views.Input.TextLine.Path, &%{
-                  &1 | :text   => test_text,
-                       :cursor => length(test_text),
-                       :offset => nil
-                })
-    }
+    test_overlay = Views.Dialog.ExportTasks.overlay(state, %{initial_path: test_text})
 
     case State.active_ui(state) do
       %Overlay{} ->
