@@ -11,8 +11,6 @@ defmodule DTask.TUI.Views.Input.TextLine do
   @callback state_key :: atom
   @callback input_width(TUI.State.t) :: non_neg_integer
 
-  @callback title(TUI.State.t) :: String.t
-
   @callback input_style(TUI.State.t) :: String.t
   @callback cursor_style(TUI.State.t) :: String.t
   @callback fill_style(TUI.State.t) :: String.t
@@ -41,16 +39,14 @@ defmodule DTask.TUI.Views.Input.TextLine do
         width   = __MODULE__.input_width(state)
         visible = Enum.slice(input_s.text, input_s.offset, width)
         cur_idx = input_s.cursor - input_s.offset
-        fill = width - length(visible) + 1
+        fill    = width - length(visible) + 1
 
         text = case Enum.split(visible, cur_idx) do
           {lhs, [c | rhs]} -> render_input(state, lhs, c,    rhs, fill)
           {lhs, []}        -> render_input(state, lhs, [?\s], [],  fill - 1)
         end
 
-        panel(title: __MODULE__.title(state)) do
-          label([], text)
-        end
+        label([], text)
       end
 
       defp render_input(state, lhs, c, rhs, fill) do
@@ -68,9 +64,6 @@ defmodule DTask.TUI.Views.Input.TextLine do
       end
 
       @impl TUI.Views.Input.TextLine
-      def title(_), do: ""
-
-      @impl TUI.Views.Input.TextLine
       def input_style(_), do: unquote(@default_input_style)
 
       @impl TUI.Views.Input.TextLine
@@ -79,7 +72,7 @@ defmodule DTask.TUI.Views.Input.TextLine do
       @impl TUI.Views.Input.TextLine
       def fill_style(_), do: unquote(@default_fill_style)
 
-      defoverridable title: 1, input_style: 1, cursor_style: 1, fill_style: 1
+      defoverridable input_style: 1, cursor_style: 1, fill_style: 1
       # # # # # End Quoted # # # # #
     end
   end

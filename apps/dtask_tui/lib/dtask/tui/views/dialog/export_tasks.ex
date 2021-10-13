@@ -26,7 +26,7 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
 
   @impl Views.Dialog
   @spec title(TUI.state) :: String.t
-  def title(_), do: "Export Task(s)"
+  def title(_), do: "Export tasks to file"
 
   @impl Views.Dialog
   @spec body(TUI.state) :: [Element.t]
@@ -47,10 +47,6 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
     use Stateful.OneLineInput,
         long_sep: Input.TextLine.Path.long_sep,
         short_sep: Input.TextLine.Path.short_sep
-
-    @impl Input.TextLine
-    @spec title(TUI.State.t) :: String.t
-    def title(_), do: "Export into file: "
 
     @impl Input.TextLine
     @impl Stateful.OneLineInput
