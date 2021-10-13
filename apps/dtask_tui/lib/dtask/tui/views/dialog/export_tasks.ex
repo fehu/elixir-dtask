@@ -41,7 +41,7 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
 
 
   defmodule FileInput do
-    @fixed_width_input 6 * 2 + 1
+    @fixed_width_input 4 * 2 + 1
 
     use Input.TextLine
     use Stateful.OneLineInput,
