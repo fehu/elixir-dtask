@@ -117,7 +117,7 @@ defmodule DTask.TUI do
 
     # State
 
-    state = %State{
+    %State{
       connection: %State.Connection{
         this_node: Node.self(),
         this_node_up: Node.alive?,
@@ -174,6 +174,7 @@ defmodule DTask.TUI do
   end
 
   # Events
+  @impl true
   def update(state, {:event, event_0}) do
     event = case event_0 do
       e0={:batch, [h | t]} when h.ch == 0 ->
@@ -216,6 +217,12 @@ defmodule DTask.TUI do
     end
   end
 
+  @impl true
+  def update(state, _msg) do
+    # raise "UPDATE: #{inspect msg}"
+    state
+  end
+
   defp update_active_stateful(state, event),
        do: update_in(state, State.active_ui_keys(state), update_stateful(event, state))
 
@@ -225,12 +232,6 @@ defmodule DTask.TUI do
     if react,
        do: update_in(s0.stateful, react),
        else: s0
-  end
-
-  @impl true
-  def update(state, _msg) do
-    # raise "UPDATE: #{inspect msg}"
-    state
   end
 
   # Send :tick event periodically

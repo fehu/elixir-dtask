@@ -3,7 +3,6 @@ defmodule DTask.TUI.Views.Dialog do
 
   alias DTask.TUI
 
-  import DTask.Util.Syntax, only: [<|>: 2]
   import Ratatouille.View
 
   @callback title(TUI.state)   :: String.t

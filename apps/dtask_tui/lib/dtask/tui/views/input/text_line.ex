@@ -4,7 +4,6 @@ defmodule DTask.TUI.Views.Input.TextLine do
   alias DTask.TUI
   alias Ratatouille.Constants
 
-  import DTask.Util.Syntax, only: [<|>: 2]
   import Ratatouille.View
 
   @input_attrs     [Constants.attribute(:underline)]
@@ -38,7 +37,7 @@ defmodule DTask.TUI.Views.Input.TextLine do
 
     text = case Enum.split(visible, cur_idx) do
       {lhs, [c | rhs]} -> render_input(lhs, c,    rhs, fill)
-      {lhs, []}        -> render_input(lhs, [? ], [],  fill - 1)
+      {lhs, []}        -> render_input(lhs, [?\s], [],  fill - 1)
     end
 
     panel(title: cfg[:title]) do
@@ -67,7 +66,7 @@ defmodule DTask.TUI.Views.Input.TextLine do
     # @behaviour Stateful.OneLineInput
 
     @long_sep  [?/, ?\\]
-    @short_sep [? , ?., ?_, ?-, ?:]
+    @short_sep [?\s, ?., ?_, ?-, ?:]
 
     use Stateful.OneLineInput,
         long_sep:  @long_sep,

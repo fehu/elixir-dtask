@@ -62,7 +62,6 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
   @state_0_key :state
 
   alias DTask.TUI.Views.Stateful
-  alias ExTermbox.Event
 
   import DTask.Util.Syntax, only: [<|>: 2]
 
@@ -80,13 +79,13 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
       * `or: fn event, state -> (s -> s) | nil end`
   """
   defmacro __using__(opts) do
-    init_state = opts[:init] <|> raise "Undefined `:init`"
+    init_state = opts[:init] <|> raise("Undefined `:init`")
     binds = case opts[:bind] do
       {:%{}, _, binds} -> binds
       nil              -> raise "Undefined `:bind`"
       _                -> raise "Malformed `:bind`"
     end
-    [ev, s0, s1, s2] = Macro.generate_arguments(4, __MODULE__)
+    [s0, s1, s2] = Macro.generate_arguments(3, __CALLER__.module)
     module  = quote do: __MODULE__
     clauses = Enum.flat_map binds, fn {{:%{}, _, lhs}, rhs_0} ->
       apply_rhs = Enum.reduce rhs_0, s0, fn
@@ -249,8 +248,6 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
 end
 
 defmodule DTask.TUI.Views.Stateful.OneLineInput do
-  alias DTask.TUI.Views.Stateful
-  alias ExTermbox.Event
 
   import DTask.Util.Syntax, only: [<|>: 2]
 
@@ -287,8 +284,8 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
 
   # # # # # # # # # # # # # # # # # # # #
 
-  @default_long_sep  [? ]
-  @default_short_sep [? ]
+  @default_long_sep  [?\s]
+  @default_short_sep [?\s]
 
   @doc """
   Supported ops:
@@ -324,12 +321,11 @@ defmodule DTask.TUI.Views.Stateful.OneLineInput do
         # Delete
         %{key: @delete}          => [{:delete, [:+, 1]}],
         %{key: @backspace}       => [{:delete, [:-, 1]}],
-        %{key: @backspace2}      => [{:delete, [:-, 1]}],
         %{key: @ctrl_backspace}  => [{:delete, [:-, unquote(short_sep)]}],
         %{key: @ctrl_w}          => [{:delete, [:-, unquote(long_sep)]}],
         %{esc: @ctrl_delete_esc} => [{:delete, [:+, unquote(short_sep)]}],
         # Input
-        %{key: @space} => [{:print, [? ]}]
+        %{key: @space} => [{:print, [?\s]}]
       }
     end
     default_or = quote do

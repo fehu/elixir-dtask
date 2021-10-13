@@ -54,7 +54,6 @@ defmodule DTask.TUI.Util.Keys do
 
       @space       unquote @space
       @backspace   unquote @backspace
-      @backspace2  unquote @backspace2
       @enter       unquote @enter
       @tab         unquote @tab
       @esc         unquote @esc
@@ -80,7 +79,6 @@ defmodule DTask.TUI.Util.Keys do
 
   def space,       do: @space
   def backspace,   do: @backspace
-  def backspace2,  do: @backspace2
   def enter,       do: @enter
   def tab,         do: @tab
   def esc,         do: @esc
@@ -94,7 +92,6 @@ end
 
 defmodule DTask.TUI.Util.Escaped do
   alias DTask.TUI.Util.Keys
-  alias Ratatouille.Constants
 
   @ctrl_arrow_up_esc    {Keys.esc, [91, 49, 59, 53, 65]}
   @ctrl_arrow_down_esc  {Keys.esc, [91, 49, 59, 53, 66]}
