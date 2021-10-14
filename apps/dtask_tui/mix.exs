@@ -28,6 +28,7 @@ defmodule DTask.App.Tui.MixProject do
   defp deps do
     [
       {:dtask, in_umbrella: true},
+      {:dtask_codec, in_umbrella: true},
       {:ratatouille, "~> 0.5.1"},
       {:tzdata, "~> 1.1"}
     ]

@@ -26,7 +26,7 @@ defmodule DTask.Task.DTO.Task do
 
   @spec new(non_neg_integer, module, Free.t() | term, dispatched | nil, finished | nil) :: t
   def new(id, task, params, dispatched \\ nil, finished \\ nil)
-      when is_integer(id) and id > 0
+      when is_integer(id) and id >= 0
        and is_atom(task)
        and (is_struct(dispatched, __MODULE__.Dispatched) or is_nil(dispatched))
        and (is_struct(finished,   __MODULE__.Finished)   or is_nil(finished)),

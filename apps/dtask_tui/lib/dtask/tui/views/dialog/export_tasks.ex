@@ -76,6 +76,10 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
   end
 
   defmodule React do
+    alias DTask.Task.{Codec, Dispatcher, DTO, Monitor}
+
+    @codec Codec.Json
+
     use DTask.TUI.Util.Keys
     use Stateful.Reactive,
         bind: %{
@@ -85,16 +89,21 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
     @impl true
     def state_key, do: :save_file
 
-    # TODO ========================================================================
+    # TODO: handle errors
     @spec save_file(Path.t | nil, boolean) :: (TUI.state -> [Stateful.react_external])
     def save_file(file \\ nil, overwrite \\ false), do: fn state ->
       file = if file, do: file, else: Views.Dialog.ExportTasks.FileInput.get_text(state)
-      # TODO
-      data = "test"
-      opts = unless overwrite, do: [:exclusive], else: []
-      case File.write(file, data, opts) do
-        :ok               -> [:close_overlay, {:open_overlay, ok_dialog(state, file)}]
-        {:error, :eexist} -> [{:open_overlay, overwrite_dialog(state, file)}]
+      data = Enum.map(state.data.tasks, &task_to_dto/1)
+
+      with {:ok, data} <- @codec.encode(data) do
+        opts = unless overwrite, do: [:exclusive], else: []
+        # Do write file
+        case File.write(file, data, opts) do
+          :ok               -> [:close_overlay, {:open_overlay, ok_dialog(state, file)}]
+          {:error, :eexist} -> [{:open_overlay, overwrite_dialog(state, file)}]
+          {:error, error}   -> {:error, error} # TODO
+        end
+      else
         {:error, error}   -> {:error, error} # TODO
       end
     end
@@ -123,6 +132,26 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
       if state.ui.window.height - 2 * padding < @min_height,
          do: @max_padding,
          else: padding
+    end
+
+    @spec task_to_dto({Dispatcher.task_id, {Dispatcher.task_descriptor, Monitor.task_state}}) :: DTO.Task.t
+    defp task_to_dto({id, {{task, params}, state}}) do
+      {dispatched, finished} = case state do
+        :pending ->
+          {nil, nil}
+        {:running, s}  ->
+          {
+            DTO.Task.Dispatched.new(s.node, s.dispatched),
+            nil
+          }
+        {:finished, s=%{outcome: {outcome, result}}} ->
+          {
+            DTO.Task.Dispatched.new(s.node, s.dispatched),
+            DTO.Task.Finished.new(outcome, result, s.finished)
+          }
+      end
+
+      DTO.Task.new(id, task, params, dispatched, finished)
     end
   end
 
