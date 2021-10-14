@@ -157,8 +157,9 @@ defmodule DTask.TUI.Views.MainView do
         end
       ]
     end
-    overlay = if state.ui.overlay,
-                 do: [overlay([state.ui.overlay.render.render(state)])],
+    overlay_s = state.ui.overlay
+    overlay = if overlay_s,
+                 do: [overlay([padding: overlay_s.padding], [overlay_s.render.render(state)])],
                  else: []
     view(view_opts, extra ++ main ++ overlay)
   end
