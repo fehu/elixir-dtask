@@ -224,7 +224,7 @@ defmodule DTask.Task.Dispatcher do
                           |> update_in([:tasks, :running], &[{task_id, running} | &1])
                           |> update_in([:executors, :busy], &[node | &1])
                           |> Map.put(:finished?, false)
-        {:noreply, new_state}
+        {:noreply, new_state, {:continue, :dispatch_next}}
       {_, []} ->
         {:noreply, state}
     end
