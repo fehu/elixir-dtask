@@ -158,7 +158,10 @@ defmodule DTask.TUI.Views.MainView do
       ]
     end
     overlays = for overlay <- state.ui.overlays do
-      overlay(padding: overlay.padding) do
+      padding = if is_function(overlay.padding, 1),
+                   do: overlay.padding.(state),
+                   else: overlay.padding
+      overlay(padding: padding) do
         overlay.render.render(state)
       end
     end

@@ -99,11 +99,14 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
       end
     end
 
+    @max_padding 6
     defp overwrite_dialog(state, file) do
-      padding = round(state.ui.window.height / 3)
-      padding = if state.ui.window.height - 2 * padding < 10,
-                   do: 6,
-                   else: padding
+      padding = fn s ->
+        p = round(s.ui.window.height / 3)
+        if s.ui.window.height - 2 * p < 10,
+           do: @max_padding,
+           else: p
+      end
       Views.Dialog.YesNo.overlay %{
         title: "Overwrite?",
         text: "File already exists, overwrite it?\n\n#{file}",

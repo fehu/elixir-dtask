@@ -13,7 +13,7 @@ defmodule DTask.TUI.Overlay do
   @type t :: %__MODULE__{
                id: atom,
                render: TUI.Render.t,
-               padding: non_neg_integer,
+               padding: non_neg_integer | (TUI.state -> non_neg_integer),
                cfg: %{atom => term} | nil,
                stateful: TUI.Views.Stateful.t | nil
              }
@@ -35,5 +35,12 @@ defmodule DTask.TUI.Overlay do
 
   @spec width(TUI.State.t, atom) :: non_neg_integer
   def width(state, stateful_id), do:
-    state.ui.window.width - 2 * (maybe(find(state, stateful_id), &(&1.padding)) <|> 0)
+    state.ui.window.width - 2 * (maybe(find(state, stateful_id), get_padding(state)) <|> 0)
+
+  defp get_padding(state), do: fn s ->
+    case s.padding do
+      fun when is_function(fun, 1) -> fun.(state)
+      other                        -> other
+    end
+  end
 end
