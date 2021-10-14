@@ -168,3 +168,12 @@ Module [DTask](apps/dtask_controller/lib/dtask.ex) re-exports all controller's q
   * `tasks_finished/0` 
   * `tasks_pending/0`
   * `tasks_running/0`
+
+### Terminal User Interface (`dtask_tui`)
+
+```shell
+elixir --cookie <secret> \
+       --erl "-kernel inet_dist_listen_min <?> inet_dist_listen_max <?>" \
+       -S mix cmd --app dtask_tui \
+       -- mix run --no-halt
+```
