@@ -20,9 +20,9 @@ defmodule DTask.TUI.Views.Input.TextLine do
   @black Constants.color(:black)
   @underline Constants.attribute(:underline)
 
-  @default_input_style  [background: @white, color: @black, attributes: [@underline]]
+  @default_input_style  [background: @white, color: @black]
   @default_cursor_style [background: @black, color: @white]
-  @default_fill_style   @default_input_style
+  @default_fill_style   [{:attributes, [@underline]} | @default_input_style]
 
   defmacro __using__(_opts) do
     quote do
