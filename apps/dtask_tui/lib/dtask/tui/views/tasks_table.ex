@@ -122,8 +122,10 @@ defmodule DTask.TUI.Views.TasksTable do
     end
 
     defp suggest_filename(_state) do
-      # TODO
-      "test.json"
+      now = TUI.Util.now_local()
+      "tasks_#{now.year}-#{l2 now.month}-#{l2 now.day}_#{l2 now.hour}-#{l2 now.minute}-#{l2 now.second}.json"
     end
+
+    defp l2(s), do: String.pad_leading(to_string(s), 2, "0")
   end
 end

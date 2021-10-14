@@ -11,6 +11,7 @@ defmodule DTask.TUI.Util do
   def shift_time_zone(t) when is_struct(t, DateTime),
       do: DateTime.shift_zone!(t, timezone(), @timezone_database)
 
+  def now_local(), do: DateTime.now!(timezone, timezone_database)
 end
 
 defmodule DTask.TUI.Util.Keys do
