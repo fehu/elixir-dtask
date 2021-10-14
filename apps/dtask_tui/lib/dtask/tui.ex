@@ -216,7 +216,8 @@ defmodule DTask.TUI do
     stateful = Views.Stateful.active_stateful(state)
     react = if stateful, do: stateful.react.(event, state)
     case react do
-      nil -> nil
+      nil ->
+        state
       fun when is_function(fun, 1) ->
         update_in(state, State.active_ui_keys(state), &update_in(&1.stateful, fun))
       ext when is_list(ext) ->
