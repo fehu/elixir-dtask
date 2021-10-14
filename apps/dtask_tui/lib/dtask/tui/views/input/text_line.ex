@@ -9,6 +9,7 @@ defmodule DTask.TUI.Views.Input.TextLine do
   import Ratatouille.View
 
   @callback state_key :: atom
+  @callback stateful_id :: atom
   @callback input_width(TUI.State.t) :: non_neg_integer
 
   @callback input_style(TUI.State.t) :: String.t
@@ -35,7 +36,8 @@ defmodule DTask.TUI.Views.Input.TextLine do
       @impl TUI.Render
       @spec render(TUI.state) :: Element.t
       def render(state) do
-        input_s = Stateful.active_state(state, state_key())
+        input_s = Stateful.find_holder(state, stateful_id())
+        input_s = if input_s, do: get_in(input_s, [:stateful, :state, state_key()])
         width   = __MODULE__.input_width(state)
         visible = Enum.slice(input_s.text, input_s.offset, width)
         cur_idx = input_s.cursor - input_s.offset

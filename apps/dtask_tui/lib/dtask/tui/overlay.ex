@@ -31,9 +31,9 @@ defmodule DTask.TUI.Overlay do
                 |> update_in(@overlays_k, &tl/1)
 
   @spec find(TUI.State.t, atom) :: TUI.Overlay.t | nil
-  def find(state, overlay_id), do: Enum.find(state.ui.overlays, &(&1.id == overlay_id))
+  def find(state, stateful_id), do: Enum.find(state.ui.overlays, &(&1.id == stateful_id))
 
   @spec width(TUI.State.t, atom) :: non_neg_integer
-  def width(state, overlay_id), do:
-    state.ui.window.width - 2 * (maybe(find(state, overlay_id), &(&1.padding)) <|> 0)
+  def width(state, stateful_id), do:
+    state.ui.window.width - 2 * (maybe(find(state, stateful_id), &(&1.padding)) <|> 0)
 end

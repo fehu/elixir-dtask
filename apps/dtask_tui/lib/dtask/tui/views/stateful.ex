@@ -4,7 +4,7 @@ defmodule DTask.TUI.Views.Stateful do
   alias DTask.TUI
   alias ExTermbox.Event
 
-  import DTask.Util.Syntax, only: [>>>: 2, maybe: 2, maybe_2: 3]
+  import DTask.Util.Syntax, only: [>>>: 2, <|>: 2, maybe: 2, maybe_2: 3]
 
   use StructAccess
 
@@ -74,6 +74,10 @@ defmodule DTask.TUI.Views.Stateful do
   @spec update_active_stateful(TUI.state, (term -> term)) :: term | nil
   def update_active_stateful(state, upd),
       do: TUI.State.update_active_ui(state, &update_in(&1.stateful, upd))
+
+  @spec find_holder(TUI.state, atom) :: %{required(:stateful) => TUI.Views.Stateful.t} | nil
+  def find_holder(state, id),
+      do: TUI.Overlay.find(state, id) <|> if(state.ui.tab.id == id, do: state.ui.tab)
 end
 
 defmodule DTask.TUI.Views.Stateful.Reactive do
@@ -100,19 +104,19 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
     ```
 
     Required:
-      * `init: state`
       * `bind`
     Options:
+      * `init: state`
       * `or: fn event, state -> (s -> s) | nil end`
   """
   defmacro __using__(opts) do
-    init_state = opts[:init] <|> raise("Undefined `:init`")
+    init_state = opts[:init]
     binds = case opts[:bind] do
       {:%{}, _, binds} -> binds
       nil              -> raise "Undefined `:bind`"
       _                -> raise "Malformed `:bind`"
     end
-    [v_s, v_state] = Macro.generate_arguments(2, __CALLER__.module)
+    [v_s, v_state, v_tmp] = Macro.generate_arguments(3, __CALLER__.module)
     module  = quote do: __MODULE__
     clauses = Enum.flat_map binds, fn
       {{:%{}, _, lhs}, {:external, rhs_0}} ->
@@ -120,11 +124,14 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
           {f, args} ->
             quote do
               # >> __MODULE__.f(..args..).(TUI.state) <<
-              # f return type is expected to be (TUI.state -> react_external)
-              unquote(module).unquote(f)(unquote_splicing(args)).(unquote(v_state))
+              # f return type is expected to be (TUI.state -> react_external | [react_external])
+              case unquote(module).unquote(f)(unquote_splicing(args)).(unquote(v_state)) do
+                unquote(v_tmp) when is_list(unquote(v_tmp)) -> unquote(v_tmp)
+                unquote(v_tmp)                              -> [unquote(v_tmp)]
+              end
             end
         end
-        quote do: (%{unquote_splicing(lhs)}, unquote(v_state) -> unquote(rhs))
+        quote do: (%{unquote_splicing(lhs)}, unquote(v_state) -> Enum.concat(unquote(rhs)))
       {{:%{}, _, lhs}, rhs_0} ->
         apply_rhs = Enum.reduce rhs_0, v_s, fn
           {f, args}, s ->
