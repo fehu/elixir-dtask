@@ -44,6 +44,7 @@ defmodule DTask.TUI.Views.HelpPanel do
       view_help(state.ui)
       layout_help(state.ui)
       label(content: @table_help)
+      tab_help(state.ui)
     end
   end
 
@@ -74,8 +75,14 @@ defmodule DTask.TUI.Views.HelpPanel do
       text(content: "]", attributes: [:bold])
     end
   end
-  defp layout_help(state_ui),
+  defp layout_help(_state_ui),
        do: nil
+
+  @task_tabs [:tasks_all, :tasks_running, :tasks_finished, :tasks_pending]
+  defp tab_help(state_ui) do
+    if state_ui.tab.id in @task_tabs,
+       do: label(content: "[Ctrl + e] Export tasks")
+  end
 
 #  defp table_help(state) do
 #    navigate = @table_help_entries

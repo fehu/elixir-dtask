@@ -93,4 +93,37 @@ defmodule DTask.TUI.Views.TasksTable do
     end
   end
 
+  defmodule React do
+    use DTask.TUI.Util.Keys
+    use TUI.Views.Stateful.Reactive,
+        init: %{
+          :base_dir => nil
+        },
+        bind: %{
+          %{key: @ctrl_e} => {:external, [{:export_tasks, []}]}
+        }
+
+    @impl true
+    def state_key, do: :export
+
+    @spec export_tasks :: (TUI.state -> TUI.Views.Stateful.react_external)
+    def export_tasks, do: fn state ->
+      base_dir = state.ui.tab.stateful.state[state_key()].base_dir <|> ""
+      filename = suggest_filename(state)
+      cfg = %{initial_path: Path.join(base_dir, filename)}
+
+      {:open_overlay, TUI.Views.Dialog.ExportTasks.overlay(state, cfg)}
+    end
+
+    @spec create(atom, atom) :: TUI.Views.Stateful.t
+    def create(app_name, config_key) do
+      base_dir = Application.get_env(app_name, config_key) <|> File.cwd!()
+      TUI.Views.Stateful.create(__MODULE__, &%{&1 | :base_dir => base_dir})
+    end
+
+    defp suggest_filename(_state) do
+      # TODO
+      "test.json"
+    end
+  end
 end

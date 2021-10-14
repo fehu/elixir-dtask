@@ -30,7 +30,10 @@ defmodule DTask.TUI do
       shortcuts: [?t, ?T],
       render_main: Views.TasksTable,
       render_side: Views.TaskDetails,
-      stateful: [Views.MainView.TableCursor]
+      stateful: [
+        Views.MainView.TableCursor,
+        {Views.TasksTable.React, :create, [@app_name, :export_dir]}
+      ]
     },
     %Tab{
       id: :tasks_running,
@@ -184,11 +187,6 @@ defmodule DTask.TUI do
       e -> e
     end
 
-    # TODO ==========================================
-    k_s = Keys.space()
-    test_text = '~/foo/bar/asdsad/qwerty/my-files/Data/baz.copy/sad.rer'
-    test_overlay = Views.Dialog.ExportTasks.overlay(state, %{initial_path: test_text})
-
     case State.active_ui(state) do
       %Overlay{} ->
         case {event, state.ui.overlay.stateful} do
@@ -198,7 +196,6 @@ defmodule DTask.TUI do
         end
       %Tab{} ->
         case event do
-          %{key: ^k_s}                    -> Overlay.open(state, test_overlay) # TODO
           %{ch: c} when c in @quit_tab_ch -> shutdown()
           %{ch: c} when c in @tab_keys    -> state |> Update.tab(@tab_keys_map[c])
           %{ch: c} when c in @layout_keys -> state |> Update.layout(@layout_keys_map[c])
@@ -215,15 +212,19 @@ defmodule DTask.TUI do
     state
   end
 
-  defp update_active_stateful(state, event),
-       do: update_in(state, State.active_ui_keys(state), update_stateful(event, state))
-
-  defp update_stateful(event, state), do: fn s0 ->
-    stateful = s0.stateful
+  defp update_active_stateful(state, event) do
+    stateful = Views.Stateful.active_stateful(state)
     react = if stateful, do: stateful.react.(event, state)
-    if react,
-       do: update_in(s0.stateful, react),
-       else: s0
+    case react do
+      nil -> nil
+      fun when is_function(fun, 1) ->
+        update_in(state, State.active_ui_keys(state), &update_in(&1.stateful, fun))
+      ext when is_list(ext) ->
+        Enum.reduce ext, state, fn
+          {:open_overlay, overlay}, s -> s |> Overlay.open(overlay)
+          :close_overlay, s           -> s |> Overlay.close
+        end
+    end
   end
 
   # Send :tick event periodically

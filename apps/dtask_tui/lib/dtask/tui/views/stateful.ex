@@ -1,6 +1,7 @@
 defmodule DTask.TUI.Views.Stateful do
   @moduledoc false
 
+  alias DTask.TUI
   alias ExTermbox.Event
 
   import DTask.Util.Syntax, only: [>>>: 2, maybe: 2, maybe_2: 3]
@@ -11,10 +12,12 @@ defmodule DTask.TUI.Views.Stateful do
   defstruct     [:state, :react]
 
   @typep state :: %{atom => term}
+  @type react_external :: {:open_overlay, TUI.Overlay.t}
+                        | :close_overlay
 
   @type t :: %__MODULE__{
                state: state,
-               react: (Event.t, TUI.state -> (state -> state) | nil)
+               react: (Event.t, TUI.state -> (state -> state) | [react_external] | nil)
              }
 
   @spec merge(t, t) :: t
@@ -47,12 +50,14 @@ defmodule DTask.TUI.Views.Stateful do
   def create_many([]), do: nil
   def create_many(specs) when is_list(specs),
       do: specs |> Stream.map(fn
-                     {mod, upd} -> __MODULE__.create(mod, upd)
-                     mod        -> __MODULE__.create(mod)
+                     {mod, fun, args} -> apply(mod, fun, args)
+                     {mod, upd}       -> __MODULE__.create(mod, upd)
+                     mod              -> __MODULE__.create(mod)
                    end)
                  |> Enum.reduce(&__MODULE__.merge/2)
 
   @spec update(t, module, (term -> term)) :: t
+  def update(stateful_struct, _, nil), do: stateful_struct
   def update(stateful_struct, stateful_behaviour, upd),
       do: update_in(stateful_struct, [:state, stateful_behaviour.state_key], upd)
 
@@ -70,6 +75,7 @@ end
 defmodule DTask.TUI.Views.Stateful.Reactive do
   @state_0_key :state
 
+  alias DTask.TUI
   alias DTask.TUI.Views.Stateful
 
   import DTask.Util.Syntax, only: [<|>: 2]
@@ -78,8 +84,16 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
 
   @doc """
     Bind format: `%{lhs => rhs}` where
-    `lhs` define event to match (key/value pairs),
+    `lhs` define event to match (as map),
     `rhs` define functions to call (name and args)
+
+    Example
+    ```
+     bind: %{
+            %{key: Keys.arrow_up} => [{:func_name, [arg1, arg2, ...]}],
+            %{key: Keys.ctrl_s}   => {:external, [{:func_name, [arg1, arg2, ...]}]},
+           }
+    ```
 
     Required:
       * `init: state`
@@ -94,30 +108,39 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
       nil              -> raise "Undefined `:bind`"
       _                -> raise "Malformed `:bind`"
     end
-    [s0, s1, s2] = Macro.generate_arguments(3, __CALLER__.module)
+    [v_s, v_state] = Macro.generate_arguments(2, __CALLER__.module)
     module  = quote do: __MODULE__
-    clauses = Enum.flat_map binds, fn {{:%{}, _, lhs}, rhs_0} ->
-      apply_rhs = Enum.reduce rhs_0, s0, fn
-        {f, args}, s ->
-          quote do
-            # >> __MODULE__.f(..args..).(TUI.state, state) <<
-            # f return type is expected to be (TUI.state, state -> state)
-            unquote(module).unquote(f)(unquote_splicing(args)).(unquote(s2), unquote(s))
-          end
-      end
-
-      rhs = update_state_expr s1, quote do: fn unquote(s0) -> unquote(apply_rhs) end
-
-      quote do: (%{unquote_splicing(lhs)}, unquote(s2) -> unquote(rhs))
+    clauses = Enum.flat_map binds, fn
+      {{:%{}, _, lhs}, {:external, rhs_0}} ->
+        rhs = Enum.map rhs_0, fn
+          {f, args} ->
+            quote do
+              # >> __MODULE__.f(..args..).(TUI.state) <<
+              # f return type is expected to be (TUI.state -> react_external)
+              unquote(module).unquote(f)(unquote_splicing(args)).(unquote(v_state))
+            end
+        end
+        quote do: (%{unquote_splicing(lhs)}, unquote(v_state) -> unquote(rhs))
+      {{:%{}, _, lhs}, rhs_0} ->
+        apply_rhs = Enum.reduce rhs_0, v_s, fn
+          {f, args}, s ->
+            quote do
+              # >> __MODULE__.f(..args..).(TUI.state, state) <<
+              # f return type is expected to be (TUI.state, state -> state)
+              unquote(module).unquote(f)(unquote_splicing(args)).(unquote(v_state), unquote(s))
+            end
+        end
+        rhs = update_state_expr v_s, quote do: fn unquote(v_s) -> unquote(apply_rhs) end
+        quote do: (%{unquote_splicing(lhs)}, unquote(v_state) -> unquote(rhs))
     end
 
     or_clauses = case opts[:or] do
       {:fn, _, cs} ->
         Enum.map cs, fn
           {:->, m0, [lhs=[{_event, _, _}, {_state_v, _, _}], rhs]} ->
-            {:->, m0, [lhs, update_state_expr(s1, rhs)]}
+            {:->, m0, [lhs, update_state_expr(v_s, rhs)]}
           {:->, m0, [lhs=[{:when, _, [{_event, _, _}, {_state_v, _, _}, _]}], rhs]} ->
-            {:->, m0, [lhs, update_state_expr(s1, rhs)]}
+            {:->, m0, [lhs, update_state_expr(v_s, rhs)]}
           _ ->
             raise @malformed_or
         end

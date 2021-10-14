@@ -36,6 +36,7 @@ defmodule DTask.TUI.Util.Keys do
   @ctrl_backspace Constants.key(:backspace)
   @ctrl_c         Constants.key(:ctrl_c)
   @ctrl_d         Constants.key(:ctrl_d)
+  @ctrl_e         Constants.key(:ctrl_e)
   @ctrl_q         Constants.key(:ctrl_q)
   @ctrl_w         Constants.key(:ctrl_w)
 
@@ -61,6 +62,7 @@ defmodule DTask.TUI.Util.Keys do
       @ctrl_backspace unquote @ctrl_backspace
       @ctrl_c         unquote @ctrl_c
       @ctrl_d         unquote @ctrl_d
+      @ctrl_e         unquote @ctrl_e
       @ctrl_q         unquote @ctrl_q
       @ctrl_w         unquote @ctrl_w
     end
@@ -86,6 +88,7 @@ defmodule DTask.TUI.Util.Keys do
   def ctrl_backspace, do: @ctrl_backspace
   def ctrl_c,         do: @ctrl_c
   def ctrl_d,         do: @ctrl_d
+  def ctrl_e,         do: @ctrl_e
   def ctrl_q,         do: @ctrl_q
   def ctrl_w,         do: @ctrl_w
 end

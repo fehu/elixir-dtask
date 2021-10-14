@@ -10,13 +10,17 @@ defmodule DTask.TUI.Tab do
   @enforce_keys [:id, :shortcuts, :data_key, :render_main]
   defstruct     [:id, :shortcuts, :data_key, :render_main, :render_side, :stateful]
 
+  @type stateful_def :: module
+                     | {module, (term -> term)}
+                     | {module, atom, [term]}
+
   @type t :: %__MODULE__{
                id: atom,
                shortcuts: [char],
                data_key: atom,
                render_main: Render.t,
                render_side: Render.t | nil,
-               stateful: Stateful.t | [module] | nil
+               stateful: Stateful.t | [stateful_def] | nil
              }
 
   # # # Build helpers # # #
