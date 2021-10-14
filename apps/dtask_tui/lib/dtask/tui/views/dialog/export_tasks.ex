@@ -86,33 +86,43 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
     def state_key, do: :save_file
 
     # TODO ========================================================================
-    @spec save_file(Path.t | nil, boolean) :: (TUI.state -> Stateful.react_external)
+    @spec save_file(Path.t | nil, boolean) :: (TUI.state -> [Stateful.react_external])
     def save_file(file \\ nil, overwrite \\ false), do: fn state ->
       file = if file, do: file, else: Views.Dialog.ExportTasks.FileInput.get_text(state)
       # TODO
       data = "test"
       opts = unless overwrite, do: [:exclusive], else: []
       case File.write(file, data, opts) do
-        :ok               -> :close_overlay
-        {:error, :eexist} -> {:open_overlay, overwrite_dialog(state, file)}
+        :ok               -> [:close_overlay, {:open_overlay, ok_dialog(state, file)}]
+        {:error, :eexist} -> [{:open_overlay, overwrite_dialog(state, file)}]
         {:error, error}   -> {:error, error} # TODO
       end
     end
 
-    @max_padding 6
     defp overwrite_dialog(state, file) do
-      padding = fn s ->
-        p = round(s.ui.window.height / 3)
-        if s.ui.window.height - 2 * p < 10,
-           do: @max_padding,
-           else: p
-      end
       Views.Dialog.YesNo.overlay %{
         title: "Overwrite?",
         text: "File already exists, overwrite it?\n\n#{file}",
-        padding: padding,
-        yes: fn -> [:close_overlay, __MODULE__.save_file(file, true).(state)] end
+        padding: &padding/1,
+        yes: fn -> [:close_overlay | __MODULE__.save_file(file, true).(state)] end
       }
+    end
+
+    defp ok_dialog(state, file) do
+      Views.Dialog.Message.overlay(%{
+        title: "File saved!",
+        text: to_string(file),
+        padding: &padding/1
+      })
+    end
+
+    @max_padding 6
+    @min_height  10
+    defp padding(state) do
+      padding = round(state.ui.window.height / 3)
+      if state.ui.window.height - 2 * padding < @min_height,
+         do: @max_padding,
+         else: padding
     end
   end
 
