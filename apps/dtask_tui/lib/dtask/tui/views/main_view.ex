@@ -157,11 +157,12 @@ defmodule DTask.TUI.Views.MainView do
         end
       ]
     end
-    overlay_s = state.ui.overlay
-    overlay = if overlay_s,
-                 do: [overlay([padding: overlay_s.padding], [overlay_s.render.render(state)])],
-                 else: []
-    view(view_opts, extra ++ main ++ overlay)
+    overlays = for overlay <- state.ui.overlays do
+      overlay(padding: overlay.padding) do
+        overlay.render.render(state)
+      end
+    end
+    view(view_opts, extra ++ main ++ Enum.reverse(overlays))
   end
 
   @spec const_height(TUI.state) :: non_neg_integer

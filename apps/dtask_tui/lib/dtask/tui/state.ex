@@ -58,7 +58,7 @@ defmodule DTask.TUI.State do
     use StructAccess
 
     @enforce_keys [:window, :layout, :active_stack, :tab, :show_help]
-    defstruct     [:window, :layout, :active_stack, :tab, :show_help, :overlay]
+    defstruct     [:window, :layout, :active_stack, :tab, :show_help, overlays: []]
 
     @typep pos_int_2 :: {pos_integer, pos_integer}
 
@@ -78,7 +78,7 @@ defmodule DTask.TUI.State do
                  layout: layout,
                  active_stack: [[atom, ...], ...],
                  tab: tab,
-                 overlay: DTask.TUI.Overlay.t | nil,
+                 overlays: [DTask.TUI.Overlay.t],
                  show_help: boolean
                }
 
@@ -88,7 +88,19 @@ defmodule DTask.TUI.State do
   def active_ui_keys(state), do: hd(state.ui.active_stack)
 
   @spec active_ui(t) :: term | nil
-  def active_ui(state), do: get_in(state, active_ui_keys(state))
+  def active_ui(state) do
+    case get_in(state, active_ui_keys(state)) do
+      [h | _] -> h
+      other   -> other
+    end
+  end
+
+  @spec update_active_ui(t, (term -> term)) :: t
+  def update_active_ui(state, upd),
+      do: update_in(state, active_ui_keys(state), fn
+        l when is_list(l) and l != [] -> [upd.(hd l) | tl(l)]
+        other -> upd.(other)
+      end)
 
   @spec put_active_ui(t, [atom, ...]) :: t
   def put_active_ui(state, keys),

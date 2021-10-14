@@ -9,6 +9,11 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
 
   use Views.Dialog
 
+  @overlay_id :export_tasks
+
+  @impl Views.Dialog
+  def overlay_id, do: @overlay_id
+
   @type cfg :: %{
                  optional(:initial_path) => charlist | String.t
                }
@@ -16,7 +21,7 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
   @impl Views.Dialog
   @spec overlay(TUI.state, cfg) :: TUI.Overlay.t
   def overlay(state, cfg), do: %TUI.Overlay{
-    id: :export_tasks,
+    id: @overlay_id,
     render: __MODULE__,
     padding: 5,
     stateful: Stateful.create_many [
@@ -53,7 +58,8 @@ defmodule DTask.TUI.Views.Dialog.ExportTasks do
     @impl Stateful.OneLineInput
     @spec input_width(TUI.state) :: non_neg_integer
     def input_width(state) do
-      TUI.Overlay.width(state) - @fixed_width_input
+      overlay_id = DTask.TUI.Views.Dialog.ExportTasks.overlay_id
+      TUI.Overlay.width(state, overlay_id) - @fixed_width_input
     end
   end
 

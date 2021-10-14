@@ -63,13 +63,17 @@ defmodule DTask.TUI.Views.Stateful do
 
   # # # Misc utilities # # #
 
-  @spec active_state(DTask.TUI.state, atom) :: term | nil
+  @spec active_state(TUI.state, atom) :: term | nil
   def active_state(state, key),
       do: maybe(active_stateful(state), &get_in(&1, [:state, key]))
 
-  @spec active_stateful(DTask.TUI.state) :: term | nil
+  @spec active_stateful(TUI.state) :: term | nil
   def active_stateful(state),
-      do: maybe(DTask.TUI.State.active_ui(state), &Map.get(&1, :stateful))
+      do: maybe(TUI.State.active_ui(state), &Map.get(&1, :stateful))
+
+  @spec update_active_stateful(TUI.state, (term -> term)) :: term | nil
+  def update_active_stateful(state, upd),
+      do: TUI.State.update_active_ui(state, &update_in(&1.stateful, upd))
 end
 
 defmodule DTask.TUI.Views.Stateful.Reactive do

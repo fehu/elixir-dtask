@@ -14,7 +14,7 @@ defmodule DTask.TUI.Views.Dialog do
 
   @type overlay_cfg :: term
   @callback overlay(TUI.state, overlay_cfg) :: DTask.TUI.Overlay.t
-
+  @callback overlay_id :: atom
 
   @fixed_width 4
   @magic_number 2
@@ -35,7 +35,7 @@ defmodule DTask.TUI.Views.Dialog do
       @impl TUI.Render
       @spec render(TUI.state) :: Element.t()
       def render(state) do
-        dialog_width = TUI.Overlay.width(state) - unquote(@fixed_width)
+        dialog_width = TUI.Overlay.width(state, __MODULE__.overlay_id) - unquote(@fixed_width)
         title = case __MODULE__.title(state) do
           ""   -> ""
           txt  ->
