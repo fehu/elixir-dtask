@@ -10,15 +10,15 @@ defmodule DTask.TUI.Views.TabsBar do
     {:separator,      " "},
     {:executors,      "[E]xecutors"},
     {:separator,      ", "},
-    {:tasks_all,      "[T]asks"},
-    {:separator,      ": "},
-    {:tasks_running,  "[R]unning"},
-    {:separator,      " / "},
-    {:tasks_finished, "[F]inished"},
-    {:separator,      " / "},
-    {:tasks_pending,  "[P]ending"},
-    {:separator,      ", "},
-    {:new_task,       "[N]ew"}
+    {:tasks_all,      "[T]asks"}
+#    {:separator,      ": "},
+#    {:tasks_running,  "[R]unning"},
+#    {:separator,      " / "},
+#    {:tasks_finished, "[F]inished"},
+#    {:separator,      " / "},
+#    {:tasks_pending,  "[P]ending"},
+#    {:separator,      ", "},
+#    {:new_task,       "[N]ew"}
   ]
 
   @active_style [attributes: [Constants.attribute(:bold)]]

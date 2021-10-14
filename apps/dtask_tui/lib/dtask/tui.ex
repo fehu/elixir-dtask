@@ -34,34 +34,34 @@ defmodule DTask.TUI do
         Views.MainView.TableCursor,
         {Views.TasksTable.React, :create, [@app_name, :export_dir]}
       ]
-    },
-    %Tab{
-      id: :tasks_running,
-      data_key: Views.TestTable.data_key,
-      shortcuts: [?r, ?R],
-      render_main: Views.TestTable,
-      render_side: Views.DetailsPanel
-    },
-    %Tab{
-      id: :tasks_finished,
-      data_key: Views.TestTable.data_key,
-      shortcuts: [?f, ?F],
-      render_main: Views.TestTable,
-      render_side: Views.DetailsPanel
-    },
-    %Tab{
-      id: :tasks_pending,
-      data_key: Views.TestTable.data_key,
-      shortcuts: [?p, ?P],
-      render_main: Views.TestTable,
-      render_side: Views.DetailsPanel
-    },
-    %Tab{
-      id: :new_task,
-      data_key: Views.TestTable.data_key,
-      shortcuts: [?n, ?N],
-      render_main: Views.TestTable
     }
+#    %Tab{
+#      id: :tasks_running,
+#      data_key: Views.TestTable.data_key,
+#      shortcuts: [?r, ?R],
+#      render_main: Views.TestTable,
+#      render_side: Views.DetailsPanel
+#    },
+#    %Tab{
+#      id: :tasks_finished,
+#      data_key: Views.TestTable.data_key,
+#      shortcuts: [?f, ?F],
+#      render_main: Views.TestTable,
+#      render_side: Views.DetailsPanel
+#    },
+#    %Tab{
+#      id: :tasks_pending,
+#      data_key: Views.TestTable.data_key,
+#      shortcuts: [?p, ?P],
+#      render_main: Views.TestTable,
+#      render_side: Views.DetailsPanel
+#    },
+#    %Tab{
+#      id: :new_task,
+#      data_key: Views.TestTable.data_key,
+#      shortcuts: [?n, ?N],
+#      render_main: Views.TestTable
+#    }
   ]
 
   @tabs_map     @tabs |> Enum.map(&{&1.id, &1}) |> Map.new

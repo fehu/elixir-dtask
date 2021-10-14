@@ -68,12 +68,12 @@ defmodule DTask.TUI.Views.HelpPanel do
 
   defp layout_help(state_ui) when is_tuple(state_ui.layout) do
     # label(content: "Layout: TODO")
-    label do
-      text(content: "Layout: ")
-      text(content: "[", attributes: [:bold])
-      text(content: "{", attributes: [:underline])
-      text(content: "]", attributes: [:bold])
-    end
+#    label do
+#      text(content: "Layout: ")
+#      text(content: "[", attributes: [:bold])
+#      text(content: "{", attributes: [:underline])
+#      text(content: "]", attributes: [:bold])
+#    end
   end
   defp layout_help(_state_ui),
        do: nil
