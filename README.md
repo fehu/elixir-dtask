@@ -1,8 +1,8 @@
 # Distributed Task Execution
 
 - [Installation](#installation)
-    + [Elixir & OTP](#elixir---otp)
-    + [`epmd` & network](#-epmd----network)
+    + [Elixir & OTP](#elixir--otp)
+    + [`epmd` & network](#epmd--network)
 - [Execution](#execution)
   * [OTP Release](#otp-release)
   * [Manually](#manually)
