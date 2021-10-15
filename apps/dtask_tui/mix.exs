@@ -27,7 +27,6 @@ defmodule DTask.App.Tui.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:dtask, in_umbrella: true},
       {:dtask_codec, in_umbrella: true},
       {:ratatouille, "~> 0.5.1"},
       {:tzdata, "~> 1.1"}
