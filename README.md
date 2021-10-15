@@ -131,36 +131,82 @@ The latter range can be specified for a node by passing following parameters to 
    ```
 
 # Execution
-**(TODO)**
 
-### Start master node (`dtask_controller`)
+## OTP Release
+
+1. Build releases.
+   ```shell
+    MIX_ENV=prod mix release ctrl
+    MIX_ENV=prod mix release exec
+    MIX_ENV=prod mix release tui
+   ```
+    
+   The releases would be placed at `_build/prod` dir.
+
+-----
+
+The project defines scripts/links for easier interaction with releases:
+    * `bin/` contains shell scripts for running corresponding release executables;
+    * `logs/daemon` contains links to logs of the corresponding daemons.
+
+-----
+
+2. Setup `ctrl_node` at [config/runtime/cluster.exs](config/runtime/cluster.exs).
+   Replace `localhost` at `@ctrl_host` line with ip of the controller (machine where `ctrl` app is running).
+
+3. Setup environment variables.
+   ```shell
+    export BEAM_HOST=<?>
+    export BEAM_PORT_MIN=<?>
+    export BEAM_PORT_MAX=<?>
+    ```
+
+    * `BEAM_PORT_MIN`, `BEAM_PORT_MAX` - port range to use for establishing connections with other nodes;
+    * `BEAM_HOST` - hostname of the machine.
+
+4. Run `ctrl` and/or `exec` application as daemons.
+   ```shell
+    bin/ctrl daemon
+    bin/exec daemon
+   ```
+    
+   For more options run `bin/<app>` without arguments.
+
+5. Run terminal user interface.
+   ```shell
+    bin/tui
+   ```
+
+## Manually
+
+### Start nodes
+Enter either `apps/dtask_controller`, `apps/dtask_runner` or `apps/dtask_tui` directory.
+
+There run
 ```shell
-elixir --cookie <secret> \
+elixir --erl "-kernel inet_dist_listen_min <?> inet_dist_listen_max <?>" \
+       -S mix run --no-halt
+
+# Or
+elixir --name <app>@<host> --cookie <secret> \
        --erl "-kernel inet_dist_listen_min <?> inet_dist_listen_max <?>" \
-       -S mix cmd --app dtask_controller \
-       -- mix run --no-halt
+       -S mix run --no-halt
 ```
 
-Unless manually specified (with `--name` or `--sname`), the node will have name `ctrl@<host>`.
+If node name is not specified with `--name` or `--sname`, it will be set to `<app>@<hostname>`.
 
-### Start slave node (`dtask_runner`)
-```shell
-elixir --cookie <secret> \
-       --erl "-kernel inet_dist_listen_min <?> inet_dist_listen_max <?>" \
-       -S mix cmd --app dtask_runner \
-       -- mix run --no-halt
-```
-
-Unless manually specified (with `--name` or `--sname`), the node will have name `exec@<host>`.
+If `--cookie` is not specified, it will be set to `:node_cookie` configuration value.
 
 ### Connect to master node (interactive shell)
 ```shell
-iex --sname user \
+iex --name user<host> \
     --cookie <secret> \
-    --remsh ctrl@<host>
+    --remsh ctrl@<ctrl_host>
 ```
 
 Module [DTask](apps/dtask_controller/lib/dtask.ex) re-exports all controller's query functions.
+  * `add_task/2`
+  * `add_tasks/1`
   * `executors/0`
   * `finished?/0`
   * `resource_usage/0`
@@ -168,12 +214,3 @@ Module [DTask](apps/dtask_controller/lib/dtask.ex) re-exports all controller's q
   * `tasks_finished/0` 
   * `tasks_pending/0`
   * `tasks_running/0`
-
-### Terminal User Interface (`dtask_tui`)
-
-```shell
-elixir --cookie <secret> \
-       --erl "-kernel inet_dist_listen_min <?> inet_dist_listen_max <?>" \
-       -S mix cmd --app dtask_tui \
-       -- mix run --no-halt
-```
