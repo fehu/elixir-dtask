@@ -22,7 +22,7 @@ defmodule DTask.App.TUI do
       %{
         id: Task.Monitor,
         start: {Task.Monitor, :start_link, [
-          {Task.Dispatcher, cfg.master_node}
+          {Task.Dispatcher, cfg.ctrl_node}
         ]}
       },
       %{
@@ -63,9 +63,9 @@ defmodule DTask.App.TUI do
     supervisor = Supervisor.start_link(children, opts)
 
     # Try connect to master node
-    case Node.connect(cfg.master_node) do
-      true -> Logger.notice("Connected to master node #{cfg.master_node}")
-      _    -> Logger.notice("Failed to connect to master node #{cfg.master_node}")
+    case Node.connect(cfg.ctrl_node) do
+      true -> Logger.notice("Connected to control node #{cfg.ctrl_node}")
+      _    -> Logger.notice("Failed to connect to master node #{cfg.ctrl_node}")
     end
 
     supervisor

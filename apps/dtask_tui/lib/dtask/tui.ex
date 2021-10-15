@@ -109,7 +109,7 @@ defmodule DTask.TUI do
 
     # State.Connection
 
-    ctrl_node = Map.get(cfg, :master_node)
+    ctrl_node = Map.get(cfg, :ctrl_node)
     connected = Node.ping(ctrl_node) == :pong
 
     # State.UI

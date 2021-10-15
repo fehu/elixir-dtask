@@ -17,7 +17,7 @@ defmodule DTask.App.Runner do
   @app_name :dtask_runner
 
   @type config :: %{
-                    master_node: atom,
+                    ctrl_node: atom,
                     exec_node_prefix: String.t,
                     resource_report_interval: non_neg_integer,
                     resource_usage: %{
@@ -37,7 +37,7 @@ defmodule DTask.App.Runner do
       %{
         id: Task.Executor,
         start: {Task.Executor, :start_link, [
-          {Task.Dispatcher, cfg.master_node},
+          {Task.Dispatcher, cfg.ctrl_node},
           Task.Reporter.MonitorBroadcastReporter.Builder
         ]},
         type: :worker,
@@ -62,9 +62,9 @@ defmodule DTask.App.Runner do
     supervisor = Supervisor.start_link(children, opts)
 
     # Connect to master node
-    case Node.connect(cfg.master_node) do
-      true -> Logger.notice("Connected to master node #{cfg.master_node}")
-      _    -> raise "Failed to connect to node #{cfg.master_node}"
+    case Node.connect(cfg.ctrl_node) do
+      true -> Logger.notice("Connected to control node #{cfg.ctrl_node}")
+      _    -> raise "Failed to connect to node #{cfg.ctrl_node}"
     end
 
     supervisor

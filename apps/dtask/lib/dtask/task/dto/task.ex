@@ -9,7 +9,6 @@ defmodule DTask.Task.DTO.Task do
 
   # # # # # # # # # # # # # # # # # # # #
 
-  @derive Jason.Encoder
   @enforce_keys [:id, :def, :params]
   defstruct     [:id, :def, :params, :dispatched, :finished]
 
@@ -42,7 +41,6 @@ defmodule DTask.Task.DTO.Task do
   # # # # # # # # # # # # # # # # # # # #
 
   defmodule Dispatched do
-    @derive Jason.Encoder
     @enforce_keys [:node, :timestamp]
     defstruct     [:node, :timestamp]
 
@@ -61,7 +59,6 @@ defmodule DTask.Task.DTO.Task do
   # # # # # # # # # # # # # # # # # # # #
 
   defmodule Finished do
-    @derive Jason.Encoder
     @enforce_keys [:outcome, :result, :timestamp]
     defstruct     [:outcome, :result, :timestamp]
 

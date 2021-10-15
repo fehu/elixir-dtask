@@ -4,7 +4,7 @@ defmodule DTask.App.Tui.MixProject do
   def project do
     [
       app: :dtask_tui,
-      version: "0.2.0",
+      version: "0.2.0.1",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -27,7 +27,6 @@ defmodule DTask.App.Tui.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:dtask, in_umbrella: true},
       {:dtask_codec, in_umbrella: true},
       {:ratatouille, "~> 0.5.1"},
       {:tzdata, "~> 1.1"}
