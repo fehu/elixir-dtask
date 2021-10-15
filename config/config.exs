@@ -13,7 +13,7 @@ ctrl_node_prefix = "ctrl"
 exec_node_prefix = "exec"
 tui_node_prefix  = "user"
 
-master_node = :ctrl@localhost
+ctrl_node = :ctrl@localhost
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -22,7 +22,7 @@ config :dtask_controller,
        exec_node_prefix: exec_node_prefix
 
 config :dtask_runner,
-       master_node: master_node,
+       ctrl_node: ctrl_node,
        exec_node_prefix: exec_node_prefix,
        resource_report_interval: 1_000,
        resource_usage: %{
@@ -35,7 +35,7 @@ config :dtask_runner,
        }
 
 config :dtask_tui,
-       master_node: master_node,
+       ctrl_node: ctrl_node,
        tui_node_prefix: tui_node_prefix,
        resource_report_timeout_millis: 1_500,
        resource_usage_hist_limit: 60,
