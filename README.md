@@ -1,11 +1,11 @@
 # Distributed Task Execution
 
-Umbrella:
-* [Codebase](apps/dtask/)
-* [Controller App](apps/dtask_controller/)
-* [Runner App](apps/dtask_runner/)
-
------
+- [Installation](#installation)
+    + [Elixir & OTP](#elixir---otp)
+    + [`epmd` & network](#-epmd----network)
+- [Execution](#execution)
+  * [OTP Release](#otp-release)
+  * [Manually](#manually)
 
 # Installation
 
@@ -146,8 +146,11 @@ The latter range can be specified for a node by passing following parameters to 
 -----
 
 The project defines scripts/links for easier interaction with releases:
-    * `bin/` contains shell scripts for running corresponding release executables;
-    * `logs/daemon` contains links to logs of the corresponding daemons.
+
+* `bin/` contains shell scripts for running corresponding release executables;
+* `logs/daemon` contains links to logs of the corresponding daemons.
+
+Make `bin/` scripts executable with `chmod +x -R bin/`.
 
 -----
 
