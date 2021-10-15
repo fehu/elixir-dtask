@@ -53,4 +53,10 @@ defmodule DTask.Task.Executor do
       _           -> {:noreply, cfg}
     end
   end
+
+  @impl true
+  def handle_info(other, cfg) do
+    Logger.info("Unhandled info message: #{inspect other}")
+    {:noreply, cfg}
+  end
 end
