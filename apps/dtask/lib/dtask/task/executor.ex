@@ -34,14 +34,13 @@ defmodule DTask.Task.Executor do
   def handle_cast({:exec, task, params, task_id}, cfg={dispatcher, reporter_builder}) do
     Logger.info("Executing task [#{task_id}] #{inspect(task)} with parameters #{inspect(params)}")
     reporter = reporter_builder.new(dispatcher, task_id)
-    # Execute the task
-    outcome =
-      try do
-        task.exec(reporter, params)
-      catch
-        :error, error -> {:failure, {:error, error, __STACKTRACE__}}
-        :exit, reason -> {:failure, {:exit, reason, __STACKTRACE__}}
-      end
+    # Start executing the task
+    e_task = Elixir.Task.async(__MODULE__, :safe_apply, [task, :exec, [reporter, params]])
+    # Block the executor indefinitely
+    outcome = case Elixir.Task.await(e_task) do
+      {:ok, res} -> res
+      error      -> {:failure, error}
+    end
     Dispatcher.report_finished(dispatcher, task_id, outcome)
     {:noreply, cfg}
   end
@@ -58,5 +57,15 @@ defmodule DTask.Task.Executor do
   def handle_info(other, cfg) do
     Logger.info("Unhandled info message: #{inspect other}")
     {:noreply, cfg}
+  end
+
+  @spec safe_apply(module, atom, [term]) :: {:ok, term} | {:error, term} | {:exit, term}
+  def safe_apply(m, f, a) do
+    try do
+      {:ok, apply(m, f, a)}
+    catch
+      :error, e -> {:error, e, __STACKTRACE__}
+      :exit,  e -> {:exit,  e, __STACKTRACE__}
+    end
   end
 end

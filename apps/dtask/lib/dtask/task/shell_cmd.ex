@@ -32,8 +32,6 @@ defmodule DTask.Task.ShellCmd do
         listen_port(port, new_state, handle_data, handle_exit)
       {^port, {:exit_status, exit_code}} ->
         handle_exit.(state, exit_code)
-      _ ->
-        listen_port(port, state, handle_data, handle_exit)
     end
   end
 
