@@ -2,6 +2,7 @@ defmodule DTask.Task.Impl.RunMLM do
   @moduledoc false
 
   alias DTask.Task
+  alias DTask.Task.DTO.Progress
   alias DTask.Task.{Reporter, ShellCmd}
   require Logger
 
