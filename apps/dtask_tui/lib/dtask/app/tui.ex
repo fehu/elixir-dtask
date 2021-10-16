@@ -13,6 +13,9 @@ defmodule DTask.App.TUI do
 
   @impl true
   def start(_type, args) do
+    # Disable logger
+    Logger.configure(level: :error)
+
     cfg = Enum.into(Application.get_all_env(@app_name), %{})
 
     # Try to start the node
@@ -58,17 +61,15 @@ defmodule DTask.App.TUI do
 
     children = children_data ++ children_tui
 
-    # Start supervisor
-    opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]
-    supervisor = Supervisor.start_link(children, opts)
-
     # Try connect to master node
     case Node.connect(cfg.ctrl_node) do
       true -> Logger.notice("Connected to control node #{cfg.ctrl_node}")
       _    -> Logger.notice("Failed to connect to master node #{cfg.ctrl_node}")
     end
 
-    supervisor
+    # Start supervisor
+    opts = [strategy: :one_for_one, name: __MODULE__.Supervisor]
+    Supervisor.start_link(children, opts)
   end
 
 end
