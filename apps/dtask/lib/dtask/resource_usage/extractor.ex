@@ -7,4 +7,6 @@ defmodule DTask.ResourceUsage.Extractor do
 
   @callback query_usage(params) :: {:ok, usage} | {:error, term}
 
+  @callback init(params) :: no_return
+  @optional_callbacks init: 1
 end

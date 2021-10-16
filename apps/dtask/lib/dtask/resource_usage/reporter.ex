@@ -31,7 +31,10 @@ defmodule DTask.ResourceUsage.Reporter do
   # # # Callbacks # # #
 
   @impl GenServer
-  def init(state={interval, _extractor, _extractor_params}) do
+  def init(state={interval, extractor, extractor_params}) do
+    if function_exported?(extractor, :init, 1),
+       do: extractor.init(extractor_params)
+
     schedule_report(interval)
     {:ok, state}
   end

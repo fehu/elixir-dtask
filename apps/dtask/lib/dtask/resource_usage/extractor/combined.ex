@@ -35,4 +35,15 @@ defmodule DTask.ResourceUsage.Extractor.Combined do
     end
   end
 
+  @impl true
+  @spec init(extractors | {extractors, any}) :: no_return
+  def init(extractors) when is_list(extractors),
+      do: Enum.each(extractors, &maybe_init/1)
+  @impl true
+  def init({extractors, _}) when is_list(extractors),
+      do: init(extractors)
+
+  defp maybe_init({extractor, params}),
+       do: if function_exported?(extractor, :init, 1),
+           do: extractor.init(params)
 end
