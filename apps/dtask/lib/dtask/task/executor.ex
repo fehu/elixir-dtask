@@ -37,7 +37,7 @@ defmodule DTask.Task.Executor do
     # Start executing the task
     e_task = Elixir.Task.async(__MODULE__, :safe_apply, [task, :exec, [reporter, params]])
     # Block the executor indefinitely
-    outcome = case Elixir.Task.await(e_task) do
+    outcome = case Elixir.Task.await(e_task, :infinity) do
       {:ok, res} -> res
       error      -> {:failure, error}
     end
