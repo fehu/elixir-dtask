@@ -69,7 +69,10 @@ defmodule DTask.TUI.Views.ExecutorDetails do
     Enum.flat_map @charts, fn {label, keys} ->
       series = hist |> Stream.map(&get_in(&1, keys))
                     |> Stream.filter(&is_number/1)
-                    |> Enum.map(&(&1 * 100))
+                    |> Enum.map(fn
+                         i when is_integer(i) -> i
+                         f when is_float(f)   -> f * 100
+                       end)
       case series |> Stream.uniq |> Enum.take(2) do
         []       -> []
         [unique] -> [&do_plot(label, &1, [unique * @coef | Enum.drop(series, 1)])]
