@@ -141,4 +141,6 @@ end
 require Protocol
 
 Protocol.derive(Jason.Encoder, DTO.Task)
+Protocol.derive(Jason.Encoder, DTO.Task.Dispatched)
+Protocol.derive(Jason.Encoder, DTO.Task.Finished)
 Protocol.derive(Jason.Encoder, Repr)
