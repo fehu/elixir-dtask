@@ -113,5 +113,6 @@ defmodule DTask.TUI.Views.ExecutorsTable do
   @spec percent(float | :nan | nil) :: String.t
   defp percent(nil),   do: "N/A"
   defp percent(:nan),  do: "N/A"
-  defp percent(float), do: "#{round(float * 100)}%"
+  defp percent(float) when is_float(float), do: "#{round(float * 100)}%"
+  defp percent(int)   when is_integer(int), do: "#{int}%"
 end
