@@ -14,8 +14,31 @@ defmodule DTask.ResourceUsage.Extractor.CpuInfo do
   @error {:error, "Failed to read /proc/stat"}
 
   @impl true
+  @spec init(param) :: module
+  def init(_), do: Agent.start_link(fn -> nil end, name: __MODULE__)
+
+  @impl true
   @spec query_usage(param) :: {:ok, usage} | {:error, term}
   def query_usage(param \\ nil) do
+    with {:ok, usage} <- do_query_usage(param) do
+      prev_usage = Agent.get_and_update(__MODULE__, &{&1, usage})
+      if prev_usage do
+        diff = deep_merge prev_usage, usage, fn {idle_p, total_p}, {idle, total} ->
+          idle_d = idle - idle_p
+          total_d = total - total_p
+
+          (total_d - idle_d) / total_d
+        end
+        {:ok, diff}
+      else
+        {:ok, %{}}
+      end
+    end
+
+  end
+
+  @spec do_query_usage(param) :: {:ok, usage} | {:error, term}
+  defp do_query_usage(param \\ nil) do
     read = if param == :each,
               do: fn line -> Enum.take_while(line, &String.starts_with?(&1, "cpu")) end,
               else: &Enum.take(&1, 1)
@@ -37,7 +60,7 @@ defmodule DTask.ResourceUsage.Extractor.CpuInfo do
           put_in(acc, cpu_k, usage)
         else
           err={:error, _} -> err
-          _               -> @error
+          err             -> {:error, err}
         end
       end
       case usage do
@@ -47,18 +70,29 @@ defmodule DTask.ResourceUsage.Extractor.CpuInfo do
     end
   end
 
-  @idle_index 3
+  @max_idx      9
+  @idle_idx     [3, 4]
+  @idle_idx_rev @idle_idx |> Enum.map(&(@max_idx - &1))
+
+  @spec parse_usage(String.t) :: {:ok, {idle :: non_neg_integer, total :: non_neg_integer}}
+                               | {:error, term}
   defp parse_usage(s_stats) do
-    stats_rev = Enum.reduce s_stats, [], fn
-      _, :error -> :error
-      s, acc    -> with {int, _} <- Integer.parse(s),
-                        do: [int | acc]
+    stats_rev = Enum.reduce s_stats, {:ok, []}, fn
+      _, e={:error, _} -> e
+      s, {:ok, acc} ->
+        case Integer.parse(s) do
+          {int, ""} -> {:ok, [int | acc]}
+          _         -> {:error, "Not an integer: '#{s}'"}
+        end
     end
-    idle_index_rev = length(s_stats) - @idle_index - 1
-    case Enum.at(stats_rev, idle_index_rev) do
-      nil  -> {:error, "Out of index #{idle_index_rev}"}
-      idle -> {:ok, 1 - idle / Enum.sum(stats_rev)}
-    end
+
+    with {:ok, stats_rev} <- stats_rev,
+         idle = Stream.with_index(stats_rev)
+                |> Stream.filter(&elem(&1, 1) in @idle_idx_rev)
+                |> Stream.map(&elem(&1, 0))
+                |> Enum.sum,
+         total = Enum.sum(stats_rev),
+      do: {:ok, {idle, total}}
   end
 
   @spec parse_cpu_key(String.t) :: {:ok, [atom | pos_integer, ...]} | :error
@@ -72,11 +106,10 @@ defmodule DTask.ResourceUsage.Extractor.CpuInfo do
     end
   end
 
-  defp stats_diff_rec(stats1, stats2, time_delta) do
-    Map.merge stats1, stats2, fn
-      _, v1, v2 when is_number(v1) and is_number(v2) -> (v2 - v1) / time_delta
-      _, v1, v2 when is_map(v1)    and is_map(v2)    -> stats_diff_rec(v1, v2, time_delta)
-      _, _, _                                        -> nil
-    end
-  end
+  defp deep_merge(m1, m2, f),
+       do: Map.merge m1, m2, fn
+         _, v1, v2 when is_map(v1) and is_map(v2) -> deep_merge(v1, v2, f)
+         _, v1, v2 when is_function(f, 2) -> f.(v1, v2)
+         k, v1, v2 when is_function(f, 3) -> f.(k, v1, v2)
+       end
 end
