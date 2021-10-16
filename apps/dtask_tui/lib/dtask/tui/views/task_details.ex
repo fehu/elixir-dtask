@@ -33,7 +33,9 @@ defmodule DTask.TUI.Views.TaskDetails do
 
     progress_elems = case task_state do
       {:running, s} ->
-        progress_label   = if is_struct(s.progress, Progress), do: s.progress.label, else: inspect(s.progress)
+        progress_label   = if is_struct(s.progress, Progress),
+                              do: to_string(s.progress.label),
+                              else: inspect(s.progress)
         progress_steps   = TaskCommon.show_progress_steps(s.progress, "", " ")
         progress_percent = TaskCommon.show_progress_percent(s.progress, " ")
         progress_width = min(MainView.details_width(state), @max_progress_width)
