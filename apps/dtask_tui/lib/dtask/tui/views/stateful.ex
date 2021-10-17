@@ -188,20 +188,14 @@ defmodule DTask.TUI.Views.Stateful.Reactive do
 end
 
 defmodule DTask.TUI.Views.Stateful.Cursor do
-  defmodule State do
-    use StructAccess
-
-    defstruct [x: 0, y: 0]
-
-    @type t :: %__MODULE__{
-                 x: non_neg_integer,
-                 y: non_neg_integer
-               }
-  end
-
   alias DTask.TUI
 
-  @type state :: __MODULE__.State.t
+  import DTask.Util.Syntax, only: [<|>: 2, maybe: 2]
+
+  @type state :: %{
+                   required(:x) => non_neg_integer,
+                   required(:y) => non_neg_integer
+                 }
 
   @typep axis :: :x | :y
   @typep op   :: :+
@@ -219,27 +213,33 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
 
   # Optional callbacks
 
-  @callback max_x(TUI.state) :: non_neg_integer
-  @callback max_y(TUI.state) :: non_neg_integer
+  @callback max_x(TUI.state, state) :: non_neg_integer
+  @callback max_y(TUI.state, state) :: non_neg_integer
 
-  @callback max_x_view(TUI.state) :: non_neg_integer
-  @callback max_y_view(TUI.state) :: non_neg_integer
+  @callback inner_height(TUI.state, state) :: non_neg_integer
+  @callback inner_width(TUI.state, state) :: non_neg_integer
 
-  @optional_callbacks max_x: 1, max_y: 1, max_x_view: 1, max_y_view: 1
+  @optional_callbacks max_x: 2, max_y: 2, inner_height: 2, inner_width: 2
 
   @doc """
-  Requires optional callbacks `max_y: 1` and `max_y_view: 1`.
+  Requires optional callbacks `max_y: 1` and `inner_height: 1`.
   """
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
     quote do
       # # # # # Quoted # # # # #
+      alias TUI.Views.Stateful
       alias TUI.Views.Stateful.Cursor
 
       @behaviour Cursor
 
       use DTask.TUI.Util.Keys
       use TUI.Views.Stateful.Reactive,
-          init: %Cursor.State{x: 0, y: 0},
+          init: %{
+            x: 0,
+            y: 0,
+            max_y: unquote(opts[:max_y]),
+            inner_height: unquote(opts[:inner_height])
+          },
           bind: %{
             %{key: @arrow_up}    => [{:move, [:y, :-]}],
             %{key: @arrow_down}  => [{:move, [:y, :+]}],
@@ -259,8 +259,8 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
       @spec move(Cursor.axis, Cursor.op) :: (TUI.state, Cursor.state -> Cursor.state)
       # Operations that require knowing data size
       def move(:y, op) when op in [:+, :++, :max], do: fn state, s ->
-        max = max_y(state)
-        page = fn -> __MODULE__.max_y_view(state) end
+        max = __MODULE__.max_y(state, s)
+        page = fn -> __MODULE__.inner_height(state, s) end
         {cond, upd_s} = case op do
           :+   -> {s.y < max - 1, fn -> update_in(s.y, &(&1 + 1)) end}
           :++  -> {true,          fn -> update_in(s.y, &min(&1 + page.(), max - 1)) end}
@@ -274,7 +274,7 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
         update_in s.y, fn y ->
           new_y = case op do
             :-  -> y - 1
-            :-- -> y - max_y_view(state)
+            :-- -> y - __MODULE__.inner_height(state, s)
           end
           max(new_y, 0)
         end
@@ -283,7 +283,13 @@ defmodule DTask.TUI.Views.Stateful.Cursor do
       # Other operations are not supported yet
       def move(_, _), do: fn _, s -> s end
 
-      defoverridable move: 2, state_key: 0
+      @spec max_y(TUI.state, Cursor.state) :: non_neg_integer
+      def max_y(state, s), do: maybe(s.max_y, s.max_y.(state)) <|> 0
+
+      @spec inner_height(TUI.state, Cursor.state) :: non_neg_integer
+      def inner_height(state, s), do: maybe(s.inner_height, s.inner_height.(state)) <|> 0
+
+      defoverridable move: 2, state_key: 0, max_y: 2, inner_height: 2
       # # # # # End Quoted # # # # #
     end
   end

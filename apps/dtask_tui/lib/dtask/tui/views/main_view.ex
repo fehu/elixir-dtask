@@ -226,14 +226,18 @@ defmodule DTask.TUI.Views.MainView do
   defmodule TableCursor do
     use Views.Stateful.Cursor
 
-    @spec max_y(TUI.state) :: non_neg_integer
-    def max_y(state) do
+    # Override
+    @impl Views.Stateful.Cursor
+    @spec max_y(TUI.state, term) :: non_neg_integer
+    def max_y(state, _) do
       data = state.data[state.ui.tab.data_key]
       if data, do: Enum.count(data), else: 0
     end
 
-    @spec max_y_view(TUI.state) :: non_neg_integer
-    defdelegate max_y_view(state), to: Views.MainView, as: :table_rows
+    # Override
+    @impl Views.Stateful.Cursor
+    @spec inner_height(TUI.state, term) :: non_neg_integer
+    def inner_height(state, _), do: Views.MainView.table_rows(state)
   end
 
   defmodule SideDimensions do
