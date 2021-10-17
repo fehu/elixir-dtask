@@ -3,12 +3,13 @@ defmodule DTask.TUI.Render.Details do
 
   alias DTask.TUI
   alias DTask.TUI.Tab
+  alias DTask.TUI.Render.Dimensions
   alias Ratatouille.Renderer.Element
 
-  @callback render_details(TUI.state, term) :: Element.t
+  @callback render_details(TUI.state, term, Dimensions.t) :: Element.t
   @callback render_empty(TUI.state) :: Element.t
 
-  defmacro __using__(_) do
+  defmacro __using__(dimensions: dimensions) do
     quote do
       # # # # # Quoted # # # # #
       alias Ratatouille.Constants
@@ -25,7 +26,9 @@ defmodule DTask.TUI.Render.Details do
         selected = if not is_nil(data) and not is_nil(cursor_y),
                       do: Enum.at(Enum.sort_by(data, &elem(&1, 0)), cursor_y)
 
-        if selected, do: render_details(state, selected), else: render_empty(state)
+        if selected,
+           do: render_details(state, selected, unquote(dimensions)),
+           else: render_empty(state)
       end
 
       @impl TUI.Render.Details
@@ -34,10 +37,10 @@ defmodule DTask.TUI.Render.Details do
         panel height: :fill, background: Constants.color(:white)
       end
 
-      @spec render_inspect(term) :: Element.t
-      def render_inspect(x) do
+      @spec render_inspect(TUI.state, term, Dimensions.t) :: Element.t
+      def render_inspect(state, x, dimensions) do
         panel title: "Inspect", height: :fill do
-          label(content: inspect(x, pretty: true, width: 0))
+          label(content: inspect(x, pretty: true, width: dimensions.width(state)))
         end
       end
 

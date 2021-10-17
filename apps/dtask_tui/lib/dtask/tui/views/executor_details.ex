@@ -2,9 +2,11 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   @moduledoc false
 
   alias DTask.ResourceUsage.Collector
+  alias DTask.TUI.Render.Dimensions
   alias DTask.TUI.Views.MainView
 
-  use DTask.TUI.Render.Details
+  use DTask.TUI.Render.Details,
+      dimensions: MainView.SideDimensions
 
   @data_cpu_info DTask.ResourceUsage.Extractor.CpuInfo
   @data_mem_info DTask.ResourceUsage.Extractor.MemInfo
@@ -25,21 +27,21 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   @label_attributes [Constants.attribute(:underline)]
 
   @impl true
-  @spec render_details(TUI.state, Collector.usage_tuple) :: Element.t
-  def render_details(_, {node, :dead}) do
+  @spec render_details(TUI.state, Collector.usage_tuple, Dimensions.t) :: Element.t
+  def render_details(_, {node, :dead}, _) do
     red = Constants.color(:red)
-    panel title: Atom.to_string(node), height: :fill, color: red, padding: 100 do
+    panel title: Atom.to_string(node), height: :fill, color: red do
       label(content: "Connection lost", color: red)
     end
   end
 
   @impl true
-  def render_details(state, {node, _}) do
+  def render_details(state, {node, _}, dimensions) do
     hist = render_hist(state, node)
+    # TODO: ui.layout
     case state.ui.layout do
       {:split_horizontal, _} ->
-        # TODO
-        height = MainView.details_height(state) - @chart_static_height * 2
+        height = dimensions.height(state) - @chart_static_height * 2
         size = if length(hist) > 0, do: floor(@grid_size / length(hist)), else: 0
         row do
           for render <- hist do
@@ -49,7 +51,7 @@ defmodule DTask.TUI.Views.ExecutorDetails do
           end
         end
       {:split_vertical, _} ->
-        height = floor(MainView.main_height(state) / length(hist)) - @chart_static_height
+        height = floor(dimensions.height(state) / length(hist)) - @chart_static_height
         for render <- hist do
           render.(height)
         end
@@ -57,7 +59,7 @@ defmodule DTask.TUI.Views.ExecutorDetails do
   end
 
   @impl true
-  def render_details(_, other), do: render_inspect(other)
+  defdelegate render_details(state, other, dimensions), to: __MODULE__, as: :render_inspect
 
   @coef 0.999999999999999
   @spec render_hist(TUI.state, node) :: [(height -> Element.t)] when height: pos_integer

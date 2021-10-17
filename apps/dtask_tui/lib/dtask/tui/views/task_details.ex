@@ -1,11 +1,13 @@
 defmodule DTask.TUI.Views.TaskDetails do
   @moduledoc false
 
-  alias DTask.TUI
-  alias DTask.TUI.Views.{MainView, TaskCommon}
   alias DTask.Task.DTO.Progress
+  alias DTask.TUI
+  alias DTask.TUI.Render.Dimensions
+  alias DTask.TUI.Views.{MainView, TaskCommon}
 
-  use DTask.TUI.Render.Details
+  use DTask.TUI.Render.Details,
+      dimensions: MainView.SideDimensions
 
   @default_color TaskCommon.default_color
   @unknown_label "Unknown"
@@ -27,8 +29,8 @@ defmodule DTask.TUI.Views.TaskDetails do
   @max_progress_width 40
 
   @impl true
-  @spec render_details(TUI.state, term) :: Element.t
-  def render_details(state, {id, {{task, params}, task_state}}) do
+  @spec render_details(TUI.state, term, Dimensions.t) :: Element.t
+  def render_details(state, {id, {{task, params}, task_state}}, dimensions) do
     title = "[#{id}] #{TaskCommon.atom_to_string_short(task)} "
 
     progress_elems = case task_state do
@@ -38,7 +40,7 @@ defmodule DTask.TUI.Views.TaskDetails do
                               else: inspect(s.progress)
         progress_steps   = TaskCommon.show_progress_steps(s.progress, "", " ")
         progress_percent = TaskCommon.show_progress_percent(s.progress, " ")
-        progress_width = min(MainView.details_width(state), @max_progress_width)
+        progress_width = min(dimensions.width(state), @max_progress_width)
                        - String.length(progress_steps)
                        - String.length(progress_percent)
                        - 2

@@ -235,4 +235,17 @@ defmodule DTask.TUI.Views.MainView do
     @spec max_y_view(TUI.state) :: non_neg_integer
     defdelegate max_y_view(state), to: Views.MainView, as: :table_rows
   end
+
+  defmodule SideDimensions do
+    @behaviour TUI.Render.Dimensions
+
+    @impl true
+    @spec height(TUI.state) :: non_neg_integer
+    defdelegate height(state), to: Views.MainView, as: :details_height
+
+    @impl true
+    @spec width(TUI.state) :: non_neg_integer
+    defdelegate width(state), to: Views.MainView, as: :details_width
+  end
+
 end
