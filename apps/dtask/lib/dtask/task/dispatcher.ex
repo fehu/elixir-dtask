@@ -250,7 +250,7 @@ defmodule DTask.Task.Dispatcher do
       task0 = Enum.find(state.tasks.running, fn {_, v} -> v.node == node end)
       {_, new_state0} =
         if task0 do
-          task_finished_upd(state, elem(task0, 0), {:error, :nodedown})
+          task_finished_upd(state, elem(task0, 0), {:failure, :nodedown})
         else
           {nil, state}
         end
