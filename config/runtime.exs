@@ -16,3 +16,6 @@ Code.require_file("./config/runtime/tasks.exs")
 
 config :dtask_controller,
        tasks: Tasks.get
+
+config :dtask_runner,
+       tasks_local_config: Tasks.local_config

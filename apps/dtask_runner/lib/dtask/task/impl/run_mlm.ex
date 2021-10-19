@@ -8,12 +8,15 @@ defmodule DTask.Task.Impl.RunMLM do
 
   @behaviour Task
 
+  @type local_params :: %{
+                          required(:dir)    => String.t,
+                          required(:script) => String.t
+                        }
+
   @type mlm_params :: [atom | {atom, term}]
-  @type params :: %{
-                    required(:dir)        => String.t,
-                    required(:script)     => String.t,
-                    required(:mlm_params) => mlm_params
-                  }
+  @type remote_params :: %{
+                           required(:mlm_params) => mlm_params
+                         }
 
   @type result :: %{
                     params: %{
@@ -34,14 +37,14 @@ defmodule DTask.Task.Impl.RunMLM do
                     optional(:error)    => String.t
                   }
 
-  @spec exec(Reporter.t, params) :: {:success, result} | {:failure, term}
-  def exec(reporter, params) do
-    File.mkdir(Path.join(params.dir, "logs"))
-    file_template = Path.join("logs", "#{params.script}.#{local_time()}.")
+  @spec exec(Reporter.t, local_params, remote_params) :: {:success, result} | {:failure, term}
+  def exec(reporter, local_params, remote_params) do
+    File.mkdir(Path.join(local_params.dir, "logs"))
+    file_template = Path.join("logs", "#{local_params.script}.#{local_time()}.")
     info_file = file_template <> "info"
     log_file = file_template <> "log"
 
-    script_cmd = ~s/"#{params.script}" #{mlm_params_to_string(params.mlm_params)}/
+    script_cmd = ~s/"#{local_params.script}" #{mlm_params_to_string(remote_params.mlm_params)}/
     cmd = ~s/sh run_logging.sh "#{log_file}" #{script_cmd}/
 
     empty_metrics_like = %{train: %{}, eval: %{}}
@@ -120,15 +123,15 @@ defmodule DTask.Task.Impl.RunMLM do
     end
 
     # Write info file
-    info_file_path = Path.join(params.dir, info_file)
-    case File.write(info_file_path, inspect(params)) do
+    info_file_path = Path.join(local_params.dir, info_file)
+    case File.write(info_file_path, inspect(Map.merge(local_params, remote_params))) do
       :ok             -> :do_nothing
       {:error, error} -> Logger.warning("Failed to write file '#{info_file_path}' (#{error})")
     end
 
     # Execute script
-    Logger.info("Executing '#{cmd}' at '#{params.dir}'")
-    ShellCmd.exec(cmd, params.dir, state0, handle_data, handle_exit)
+    Logger.info("Executing '#{cmd}' at '#{local_params.dir}'")
+    ShellCmd.exec(cmd, local_params.dir, state0, handle_data, handle_exit)
   end
 
 

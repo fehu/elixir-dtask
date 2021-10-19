@@ -7,10 +7,12 @@ defmodule DTask.Task.Executor do
   use GenServer
   require Logger
 
-  @spec start_link(Dispatcher.server, Reporter.Builder.t) :: GenServer.on_start
-  def start_link(dispatcher, reporter_builder) do
+  @type tasks_cfg :: %{module => term}
+
+  @spec start_link(Dispatcher.server, Reporter.Builder.t, tasks_cfg) :: GenServer.on_start
+  def start_link(dispatcher, reporter_builder, tasks_cfg) do
     Logger.debug("DTask.Task.Executor.start_link(#{inspect(dispatcher)}, #{reporter_builder})")
-    GenServer.start_link(__MODULE__, {dispatcher, reporter_builder}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, {dispatcher, reporter_builder, tasks_cfg}, name: __MODULE__)
   end
 
   # TODO: use `call` to ensure task was accepted for execution
@@ -23,7 +25,7 @@ defmodule DTask.Task.Executor do
   # # # Callbacks # # #
 
   @impl true
-  def init(cfg={dispatcher, _}) do
+  def init(cfg={dispatcher, _, _}) do
     # Monitor `dispatcher` process
     Process.monitor(dispatcher)
 
@@ -31,11 +33,14 @@ defmodule DTask.Task.Executor do
   end
 
   @impl true
-  def handle_cast({:exec, task, params, task_id}, cfg={dispatcher, reporter_builder}) do
-    Logger.info("Executing task [#{task_id}] #{inspect(task)} with parameters #{inspect(params)}")
+  def handle_cast({:exec, task, remote_params, task_id}, cfg={dispatcher, reporter_builder, tasks_cfg}) do
+    local_params = Map.get(tasks_cfg, task)
+    Logger.info("Executing task [#{task_id}] #{inspect(task)}" <>
+                " with parameters #{inspect local_params} && #{inspect remote_params}")
     reporter = reporter_builder.new(dispatcher, task_id)
     # Start executing the task
-    e_task = Elixir.Task.async(__MODULE__, :safe_apply, [task, :exec, [reporter, params]])
+    task_params = [reporter, local_params, remote_params]
+    e_task = Elixir.Task.async(__MODULE__, :safe_apply, [task, :exec, task_params])
     # Block the executor indefinitely
     outcome = case Elixir.Task.await(e_task, :infinity) do
       {:ok, res} -> res

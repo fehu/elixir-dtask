@@ -12,15 +12,18 @@ defmodule Tasks do
 
   @script_file "run_train.opus_2016_es.py"
 
+  @spec local_config :: %{module => %{atom => term}}
+  def local_config, do: %{
+    RunMLM: %{
+      dir: @script_dir,
+      script: @script_file,
+    }
+  }
   # # # # # # # # # # # #
 
   @spec train_mlm(RunMLM.params) :: {RunMLM, RunMLM.params}
   def train_mlm(params \\ []) do
-    {RunMLM, %{
-      dir: @script_dir,
-      script: @script_file,
-      mlm_params: params
-    }}
+    {RunMLM, %{mlm_params: params}}
   end
 
   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

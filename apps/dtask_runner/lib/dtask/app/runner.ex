@@ -38,7 +38,8 @@ defmodule DTask.App.Runner do
         id: Task.Executor,
         start: {Task.Executor, :start_link, [
           {Task.Dispatcher, cfg.ctrl_node},
-          Task.Reporter.MonitorBroadcastReporter.Builder
+          Task.Reporter.MonitorBroadcastReporter.Builder,
+          cfg.tasks_local_config
         ]},
         type: :worker,
         restart: :transient,
