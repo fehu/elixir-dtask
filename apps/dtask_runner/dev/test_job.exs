@@ -5,7 +5,7 @@ defmodule TestJob do
     IO.puts("Working: #{n} / #{n_max}")
     :timer.sleep(wait)
 
-    if :rand.uniform() > 0.9 do
+    if :rand.uniform() > 0.98 do
       IO.puts(:standard_error, "FAIL")
       exit({:shutdown, 1})
     end
@@ -16,4 +16,12 @@ defmodule TestJob do
   end
 end
 
-TestJob.loop(10, 1_000)
+default_steps = 10
+default_wait  = 1_000
+
+case System.argv do
+  [steps, wait] -> TestJob.loop(String.to_integer(steps), String.to_integer(wait))
+  [steps]       -> TestJob.loop(String.to_integer(steps), default_wait)
+  []            -> TestJob.loop(default_steps, default_wait)
+  _             -> raise "Expected arguments: steps \\ #{default_steps}, wait \\ #{default_wait}"
+end
