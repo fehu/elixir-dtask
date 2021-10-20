@@ -14,7 +14,7 @@ defmodule Tasks do
 
   @spec local_config :: %{module => %{atom => term}}
   def local_config, do: %{
-    RunMLM: %{
+    RunMLM => %{
       dir: @script_dir,
       script: @script_file,
     }
